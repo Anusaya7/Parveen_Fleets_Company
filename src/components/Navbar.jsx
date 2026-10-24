@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, ChevronRight, Phone, ShieldCheck, ArrowUpRight } from 'lucide-react';
+import { Menu, X, ChevronRight, Phone, Mail, ShieldCheck } from 'lucide-react';
 
 export default function Navbar({ onOpenQuote }) {
   const [scrolled, setScrolled] = useState(false);
@@ -7,7 +7,7 @@ export default function Navbar({ onOpenQuote }) {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 30);
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -17,12 +17,9 @@ export default function Navbar({ onOpenQuote }) {
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
     { name: 'Services', href: '#services' },
-    { name: 'Fleet OS', href: '#tech' },
-    { name: 'Safety', href: '#safety' },
     { name: 'Fleet', href: '#fleet' },
-    { name: 'Pan-India', href: '#presence' },
-    { name: 'Awards', href: '#awards' },
-    { name: 'Insights', href: '#blog' },
+    { name: 'Safety', href: '#safety' },
+    { name: 'Presence', href: '#presence' },
     { name: 'Contact', href: '#contact' },
   ];
 
@@ -31,131 +28,73 @@ export default function Navbar({ onOpenQuote }) {
     setMobileMenuOpen(false);
     const target = document.querySelector(href);
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth' });
+      const header = document.querySelector('header');
+      const top = target.getBoundingClientRect().top + window.scrollY - (header?.offsetHeight || 80);
+      window.scrollTo({ top, behavior: 'smooth' });
     }
   };
 
   return (
     <>
-      {/* Top Enterprise Trust Utility Bar */}
-      <div style={{
-        background: '#03050A',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-        padding: '0.45rem 1.5rem',
-        fontSize: '0.72rem',
-        color: '#94A3B8'
-      }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#00C896', fontWeight: 600 }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00C896', display: 'inline-block', boxShadow: '0 0 10px #00C896' }} />
-              24x7 Enterprise Command Center Active
-            </span>
-            <span style={{ display: 'none', md: 'inline', color: '#334155' }}>•</span>
-            <span style={{ color: '#D4AF37', fontWeight: 600, letterSpacing: '0.04em' }}>
-              ISO 9001:2015 & 100% PoSH Certified
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <a href="tel:+919545899838" style={{ color: '#F8FAFC', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}>
-              <Phone size={12} color="#00C896" />
-              <span>Priority Hotline: +91 95458 99838</span>
+      <div className="site-topbar">
+        <div className="container" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          paddingTop: '0.45rem',
+          paddingBottom: '0.45rem',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+            <a href="tel:+919545899838" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#E8C547', fontWeight: 600 }}>
+              <Phone size={13} /> +91 95458 99838
             </a>
+            <a href="mailto:sales@parveenfleets.in" className="topbar-email" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Mail size={13} /> sales@parveenfleets.in
+            </a>
+          </div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#C5D2E0', fontWeight: 600, letterSpacing: '0.04em' }}>
+            <ShieldCheck size={13} color="#E8C547" /> ISO 9001:2015 · PoSH Certified · 24×7 Support
           </div>
         </div>
       </div>
 
-      {/* Main Glass Navbar */}
       <header
         style={{
           position: 'sticky',
           top: 0,
           zIndex: 50,
-          background: scrolled ? 'rgba(5, 8, 15, 0.94)' : 'rgba(5, 8, 15, 0.82)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: scrolled ? '0 16px 36px rgba(0, 0, 0, 0.65), 0 0 25px rgba(0, 200, 150, 0.06)' : 'none'
+          background: scrolled ? 'rgba(11, 31, 58, 0.98)' : '#0B1F3A',
+          backdropFilter: scrolled ? 'blur(14px)' : 'none',
+          WebkitBackdropFilter: scrolled ? 'blur(14px)' : 'none',
+          borderBottom: '1px solid rgba(232, 197, 71, 0.18)',
+          transition: 'all 0.3s ease',
+          boxShadow: scrolled ? '0 10px 28px rgba(8, 22, 40, 0.28)' : 'none'
         }}
       >
-        <div className="container navbar-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.9rem 1.5rem' }}>
-          
-          {/* Brand Logo & Sovereign Emblem */}
-          <a href="#home" onClick={(e) => handleLinkClick(e, '#home')} aria-label="Parveen Fleets home" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #111827 0%, #1A2235 60%, #00C896 100%)',
-              border: '1px solid rgba(0, 200, 150, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 20px rgba(0, 200, 150, 0.2)',
-              position: 'relative'
-            }}>
-              <span style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 900,
-                fontSize: '1.25rem',
-                color: '#F8FAFC',
-                letterSpacing: '-1px'
-              }}>
-                P<span style={{ color: '#00C896' }}>F</span>
-              </span>
-              <div style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#D4AF37'
-              }} />
-            </div>
-            <div>
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontWeight: 800,
-                fontSize: '1.2rem',
-                letterSpacing: '0.04em',
-                lineHeight: 1.15,
-                color: '#F8FAFC',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}>
-                PARVEEN <span style={{ color: '#00C896' }}>FLEETS</span>
-              </div>
-              <div style={{
-                fontSize: '0.62rem',
-                color: '#94A3B8',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase'
-              }}>
-                PVT LTD • Enterprise Mobility
-              </div>
-            </div>
+        <div className="container navbar-main" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.7rem', paddingBottom: '0.7rem' }}>
+
+          <a href="#home" onClick={(e) => handleLinkClick(e, '#home')} aria-label="Parveen Fleets home" className="brand-link">
+            <img
+              src="/parveen-fleets-logo.png"
+              alt="Parveen Fleets Pvt Ltd"
+              className="brand-logo"
+            />
           </a>
 
-          {/* Desktop Navigation Links */}
-          <nav style={{ alignItems: 'center', gap: '0.85rem' }} className="desktop-nav">
+          <nav style={{ alignItems: 'center', gap: '0.15rem' }} className="desktop-nav">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={(e) => handleLinkClick(e, link.href)}
                 style={{
-                  fontSize: '0.84rem',
+                  fontSize: '0.82rem',
                   fontWeight: 600,
-                  color: '#94A3B8',
+                  color: '#D6E0EC',
                   position: 'relative',
-                  padding: '0.35rem 0.5rem',
-                  transition: 'all 0.2s ease',
-                  borderRadius: '6px'
+                  padding: '0.45rem 0.55rem'
                 }}
                 className="nav-hover-link"
               >
@@ -164,27 +103,24 @@ export default function Navbar({ onOpenQuote }) {
             ))}
           </nav>
 
-          {/* Primary CTA and Controls */}
-          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <button
               onClick={() => onOpenQuote()}
-              className="btn-emerald nav-quote-btn"
-              style={{ padding: '0.65rem 1.35rem', fontSize: '0.85rem' }}
+              className="btn-gold"
+              style={{ padding: '0.58rem 1.2rem', fontSize: '0.84rem' }}
             >
-              <span className="nav-quote-desktop">Request Quote</span>
+              <span className="nav-quote-desktop">Get Instant Quote</span>
               <span className="nav-quote-mobile">Quote</span>
-              <ArrowUpRight size={16} />
             </button>
 
-            {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               style={{
-                background: 'rgba(26, 34, 53, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#F8FAFC',
-                padding: '0.55rem',
-                borderRadius: '10px',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                color: '#FFFFFF',
+                padding: '0.5rem',
+                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -197,47 +133,45 @@ export default function Navbar({ onOpenQuote }) {
           </div>
         </div>
 
-        {/* Mobile Slide-down Glass Drawer */}
         {mobileMenuOpen && (
           <div
             style={{
-              background: 'rgba(10, 14, 26, 0.98)',
-              borderBottom: '1px solid rgba(0, 200, 150, 0.2)',
-              padding: '1.5rem',
-              backdropFilter: 'blur(24px)'
+              background: '#081628',
+              borderTop: '1px solid rgba(232, 197, 71, 0.16)',
+              padding: '1.25rem 1.5rem 1.5rem'
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
                   onClick={(e) => handleLinkClick(e, link.href)}
                   style={{
-                    fontSize: '1rem',
+                    fontSize: '1.02rem',
                     fontWeight: 600,
-                    color: '#F8FAFC',
-                    padding: '0.65rem 0',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                    color: '#FFFFFF',
+                    padding: '0.7rem 0',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between'
                   }}
                 >
                   {link.name}
-                  <ChevronRight size={16} color="#00C896" />
+                  <ChevronRight size={16} color="#E8C547" />
                 </a>
               ))}
-              <div style={{ paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ paddingTop: '1rem' }}>
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     onOpenQuote();
                   }}
-                  className="btn-emerald"
-                  style={{ width: '100%', justifyContent: 'center' }}
+                  className="btn-gold"
+                  style={{ width: '100%' }}
                 >
-                  Request Corporate Quote
+                  Book Fleet Now
                 </button>
               </div>
             </div>
@@ -245,38 +179,30 @@ export default function Navbar({ onOpenQuote }) {
         )}
       </header>
 
-      {/* Glowing Header Divider Line: transparent -> Emerald Green (#00C896) -> transparent */}
-      <div className="header-glow-divider" />
-
-      {/* Responsive CSS Helper for Desktop nav */}
       <style>{`
-        @media (min-width: 1060px) {
+        @media (min-width: 1100px) {
           .desktop-nav { display: flex !important; }
           .mobile-toggle { display: none !important; }
         }
-        @media (max-width: 1059px) {
+        @media (max-width: 1099px) {
           .desktop-nav { display: none !important; }
           .mobile-toggle { display: flex !important; }
         }
         .nav-quote-mobile { display: none; }
+        @media (max-width: 720px) {
+          .topbar-email { display: none !important; }
+          .site-topbar .container { justify-content: center !important; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+        }
         @media (max-width: 640px) {
-          .navbar-main { gap: 0.5rem; padding-left: 0.85rem !important; padding-right: 0.85rem !important; }
-          .navbar-main > a { min-width: 0; gap: 0.5rem !important; }
-          .navbar-main > a > div:first-child { width: 38px !important; height: 38px !important; flex: 0 0 38px; }
-          .navbar-main > a > div:last-child > div:first-child { font-size: 0.95rem !important; letter-spacing: 0.02em !important; }
-          .navbar-main > a > div:last-child > div:last-child { font-size: 0.52rem !important; letter-spacing: 0.08em !important; }
+          .navbar-main { gap: 0.5rem; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+          .navbar-main .brand-logo { height: 40px; max-width: 168px; }
           .navbar-actions { gap: 0.4rem !important; }
-          .navbar-actions > .btn-emerald { padding: 0.55rem 0.8rem !important; white-space: nowrap; font-size: 0.8rem !important; }
+          .navbar-actions > .btn-gold { padding: 0.5rem 0.7rem !important; white-space: nowrap; }
           .nav-quote-desktop { display: none; }
           .nav-quote-mobile { display: inline; }
-          .navbar-actions .mobile-toggle { padding: 0.4rem !important; }
         }
         .nav-hover-link:hover {
-          color: #00C896 !important;
-          background: rgba(0, 200, 150, 0.08);
-        }
-        .nav-hover-link[href="#home"] {
-          color: #00C896 !important;
+          color: #E8C547 !important;
         }
       `}</style>
     </>

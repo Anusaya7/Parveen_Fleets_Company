@@ -300,7 +300,7 @@ export const FLEET_SHOWCASE = [
     fuel: "Petrol / CNG / Hybrid",
     features: ["Chauffeur Driven", "Climate Control AC", "Live GPS Tracking", "Spacious Boot"],
     rateEstimate: "₹1,800 / 8 Hrs",
-    image: "/images/fleet_luxury_suv.jpg",
+    image: "/images/fleet/dzire.jpg",
     badge: "Most Popular Daily"
   },
   {
@@ -312,7 +312,7 @@ export const FLEET_SHOWCASE = [
     fuel: "Hybrid Petrol",
     features: ["Extra Rear Legroom", "Rear AC Vents", "Plush Leatherette", "Corporate Wi-Fi"],
     rateEstimate: "₹2,200 / 8 Hrs",
-    image: "/images/fleet_luxury_suv.jpg",
+    image: "/images/fleet/ciaz.jpg",
     badge: "Executive Class"
   },
   {
@@ -324,7 +324,7 @@ export const FLEET_SHOWCASE = [
     fuel: "Self-Charging Hybrid",
     features: ["Captain Ottoman Seats", "Dual Zone Panoramic AC", "Ultra Silent Hybrid", "Sunroof & USB-C"],
     rateEstimate: "₹3,800 / 8 Hrs",
-    image: "/images/fleet_luxury_suv.jpg",
+    image: "/images/fleet/innova-hycross.jpg",
     badge: "Flagship Corporate"
   },
   {
@@ -336,7 +336,7 @@ export const FLEET_SHOWCASE = [
     fuel: "Diesel / Hybrid",
     features: ["Mercedes GLE / BMW X5 / Fortuner", "VIP Black Leather", "Protocol Chauffeur", "Executive Privacy"],
     rateEstimate: "₹6,500 / 8 Hrs",
-    image: "/images/hero_fleet.jpg",
+    image: "/images/fleet/luxury-suv.jpg",
     badge: "Dignitary Grade"
   },
   {
@@ -348,7 +348,7 @@ export const FLEET_SHOWCASE = [
     fuel: "Turbo Diesel",
     features: ["Pushback Luxury Seats", "Individual AC Louvers", "Surround Sound & Mic", "Large Luggage Bay"],
     rateEstimate: "₹4,500 / 8 Hrs",
-    image: "/images/hero_fleet.jpg",
+    image: "/images/fleet/tempo-traveller.jpg",
     badge: "Team Commute"
   },
   {
@@ -360,7 +360,7 @@ export const FLEET_SHOWCASE = [
     fuel: "BS6 Diesel",
     features: ["Air Suspension", "Wide Central Aisle", "LED Reading Lamps", "GPS Route Monitored"],
     rateEstimate: "₹6,000 / Day",
-    image: "/images/hero_fleet.jpg",
+    image: "/images/fleet/mini-bus.jpg",
     badge: "Campus Shuttles"
   },
   {
@@ -372,7 +372,7 @@ export const FLEET_SHOWCASE = [
     fuel: "BS6 Heavy Diesel",
     features: ["Semi-Sleeper / Pushback", "Full Air Suspension", "Emergency Exits & Cameras", "Chilled AC Ducts"],
     rateEstimate: "₹9,500 / Day",
-    image: "/images/hero_fleet.jpg",
+    image: "/images/fleet/luxury-coach.jpg",
     badge: "Event & MICE"
   },
   {
@@ -384,7 +384,7 @@ export const FLEET_SHOWCASE = [
     fuel: "Euro 6 Clean Diesel",
     features: ["Volvo B11R Multi-Axle", "Aircraft Style Overhead", "Restroom On-Board (Optional)", "High-Speed 5G Wi-Fi"],
     rateEstimate: "₹14,000 / Day",
-    image: "/images/hero_fleet.jpg",
+    image: "/images/fleet/volvo-coach.jpg",
     badge: "Ultimate Luxury"
   }
 ];
@@ -476,6 +476,150 @@ export const OPERATIONAL_STATES = [
   }
 ];
 
+export const CITIES_WE_SERVE_COLUMNS = [
+  [
+    { name: "Jammu & Kashmir", tone: "gold", cities: ["Jammu", "Pulwama", "Akhnoor", "Patnitop", "Srinagar"] },
+    { name: "Punjab", tone: "amber", cities: ["Amritsar", "Barnala", "Jalandhar", "Firozpur"] },
+    { name: "Rajasthan", tone: "amber", cities: ["Ajmer", "Jaipur", "Jodhpur", "Udaipur", "Kota"] },
+    { name: "Haryana", tone: "amber", cities: ["Gurugram", "Karnal", "Faridabad", "Ambala", "Sonipat"] },
+    { name: "Madhya Pradesh", tone: "amber", cities: ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"] },
+    { name: "Uttar Pradesh", tone: "amber", cities: ["Agra", "Lucknow", "Meerut", "Noida", "Varanasi"] }
+  ],
+  [
+    { name: "Uttarakhand", tone: "amber", cities: ["Dehradun", "Haridwar", "Almora", "Auli", "Rishikesh"] },
+    { name: "Assam", tone: "green", cities: ["Guwahati", "Dibrugarh", "Jorhat", "Tezpur", "Silchar"] },
+    { name: "Odisha", tone: "green", cities: ["Bhubaneswar", "Cuttack", "Brahmapur", "Raurkela", "Sambalpur", "Puri"] },
+    { name: "Telangana", tone: "green", cities: ["Hyderabad", "Karimnagar", "Ramagundam", "Mahabubnagar", "Siddipet", "Suryapet", "Adilabad"] },
+    { name: "Tamil Nadu", tone: "green", cities: ["Chennai", "Coimbatore", "Coonoor", "Kanyakumari", "Madurai", "Rameswaram", "Thanjavur", "Tiruchirappalli"] }
+  ],
+  [
+    { name: "Gujarat", tone: "amber", cities: ["Vadodara", "Dwarka", "Gandhinagar", "Ahmedabad", "Surat", "Rajkot", "Junagadh", "Jamnagar", "Porbandar"] },
+    { name: "Maharashtra", tone: "amber", cities: ["Pune", "Solapur", "Kolhapur", "Nagpur", "Aurangabad", "Mumbai", "Ahmednagar", "Shirdi", "Nashik", "Latur", "Akola"] },
+    { name: "Kerala", tone: "green", cities: ["Thiruvananthapuram", "Kozhikode", "Thrissur", "Kochi", "Kannur", "Kottayam", "Kasaragod", "Valanchery"] }
+  ],
+  [
+    { name: "Andhra Pradesh", tone: "violet", cities: ["Amaravati", "Nellore", "Chittoor", "Eluru", "Guntur", "Tirupati", "Kurnool", "Vijayawada", "Visakhapatnam"] },
+    { name: "Karnataka", tone: "violet", cities: ["Bangalore", "Mysuru", "Mangaluru", "Udupi", "Hubballi", "Dharwad", "Uttara Kannada"] },
+    { name: "West Bengal", tone: "violet", cities: ["Kolkata", "Asansol", "Siliguri", "Durgapur", "Kharagpur", "Cooch Behar", "Shantipur", "Krishnanagar", "Medinipur"] }
+  ]
+];
+
+export const CITY_GEO = {
+  Jammu: [32.7266, 74.857],
+  Pulwama: [33.8716, 74.899],
+  Akhnoor: [32.8958, 74.7356],
+  Patnitop: [33.0833, 75.3333],
+  Srinagar: [34.0837, 74.7973],
+  Amritsar: [31.634, 74.8723],
+  Barnala: [30.3819, 75.5465],
+  Jalandhar: [31.326, 75.5762],
+  Firozpur: [30.9331, 74.6223],
+  Ajmer: [26.4499, 74.6399],
+  Jaipur: [26.9124, 75.7873],
+  Jodhpur: [26.2389, 73.0243],
+  Udaipur: [24.5854, 73.7125],
+  Kota: [25.2138, 75.8648],
+  Gurugram: [28.4595, 77.0266],
+  Karnal: [29.6857, 76.9905],
+  Faridabad: [28.4089, 77.3178],
+  Ambala: [30.3752, 76.7821],
+  Sonipat: [28.9931, 77.0151],
+  Bhopal: [23.2599, 77.4126],
+  Indore: [22.7196, 75.8577],
+  Gwalior: [26.2183, 78.1828],
+  Jabalpur: [23.1815, 79.9864],
+  Ujjain: [23.1765, 75.7885],
+  Agra: [27.1767, 78.0081],
+  Lucknow: [26.8467, 80.9462],
+  Meerut: [28.9845, 77.7064],
+  Noida: [28.5355, 77.391],
+  Varanasi: [25.3176, 82.9739],
+  Dehradun: [30.3165, 78.0322],
+  Haridwar: [29.9457, 78.1642],
+  Almora: [29.5892, 79.6467],
+  Auli: [30.527, 79.566],
+  Rishikesh: [30.0869, 78.2676],
+  Guwahati: [26.1445, 91.7362],
+  Dibrugarh: [27.4728, 94.912],
+  Jorhat: [26.7509, 94.2037],
+  Tezpur: [26.6338, 92.8],
+  Silchar: [24.8333, 92.7789],
+  Bhubaneswar: [20.2961, 85.8245],
+  Cuttack: [20.4625, 85.8829],
+  Brahmapur: [19.315, 84.7941],
+  Raurkela: [22.2604, 84.8536],
+  Sambalpur: [21.4669, 83.9812],
+  Puri: [19.8135, 85.8312],
+  Hyderabad: [17.385, 78.4867],
+  Karimnagar: [18.4386, 79.1288],
+  Ramagundam: [18.759, 79.5134],
+  Mahabubnagar: [16.7488, 77.9855],
+  Siddipet: [18.1018, 78.8522],
+  Suryapet: [17.15, 79.6167],
+  Adilabad: [19.6641, 78.532],
+  Chennai: [13.0827, 80.2707],
+  Coimbatore: [11.0168, 76.9558],
+  Coonoor: [11.35, 76.8167],
+  Kanyakumari: [8.0883, 77.5385],
+  Madurai: [9.9252, 78.1198],
+  Rameswaram: [9.2876, 79.3129],
+  Thanjavur: [10.787, 79.1378],
+  Tiruchirappalli: [10.7905, 78.7047],
+  Vadodara: [22.3072, 73.1812],
+  Dwarka: [22.2442, 68.9685],
+  Gandhinagar: [23.2156, 72.6369],
+  Ahmedabad: [23.0225, 72.5714],
+  Surat: [21.1702, 72.8311],
+  Rajkot: [22.3039, 70.8022],
+  Junagadh: [21.5222, 70.4579],
+  Jamnagar: [22.4707, 70.0577],
+  Porbandar: [21.6417, 69.6293],
+  Pune: [18.5204, 73.8567],
+  Solapur: [17.6599, 75.9064],
+  Kolhapur: [16.705, 74.2433],
+  Nagpur: [21.1458, 79.0882],
+  Aurangabad: [19.8762, 75.3433],
+  Mumbai: [19.076, 72.8777],
+  Ahmednagar: [19.0948, 74.748],
+  Shirdi: [19.7645, 74.4762],
+  Nashik: [19.9975, 73.7898],
+  Latur: [18.4088, 76.5604],
+  Akola: [20.7002, 77.0082],
+  Thiruvananthapuram: [8.5241, 76.9366],
+  Kozhikode: [11.2588, 75.7804],
+  Thrissur: [10.5276, 76.2144],
+  Kochi: [9.9312, 76.2673],
+  Kannur: [11.8745, 75.3704],
+  Kottayam: [9.5916, 76.5222],
+  Kasaragod: [12.4996, 74.9869],
+  Valanchery: [10.8833, 76.0667],
+  Amaravati: [16.541, 80.515],
+  Nellore: [14.4426, 79.9865],
+  Chittoor: [13.2172, 79.1003],
+  Eluru: [16.7107, 81.0952],
+  Guntur: [16.3067, 80.4365],
+  Tirupati: [13.6288, 79.4192],
+  Kurnool: [15.8281, 78.0373],
+  Vijayawada: [16.5062, 80.648],
+  Visakhapatnam: [17.6868, 83.2185],
+  Bangalore: [12.9716, 77.5946],
+  Mysuru: [12.2958, 76.6394],
+  Mangaluru: [12.9141, 74.856],
+  Udupi: [13.3409, 74.7421],
+  Hubballi: [15.3647, 75.124],
+  Dharwad: [15.4589, 75.0078],
+  "Uttara Kannada": [14.8184, 74.6299],
+  Kolkata: [22.5726, 88.3639],
+  Asansol: [23.6739, 86.9524],
+  Siliguri: [26.7271, 88.3953],
+  Durgapur: [23.5204, 87.3119],
+  Kharagpur: [22.346, 87.232],
+  "Cooch Behar": [26.3239, 89.4529],
+  Shantipur: [23.25, 88.43],
+  Krishnanagar: [23.4058, 88.4909],
+  Medinipur: [22.4309, 87.3215]
+};
+
 export const TESTIMONIALS_DATA = [
   {
     id: 1,
@@ -507,18 +651,18 @@ export const TESTIMONIALS_DATA = [
 ];
 
 export const CLIENT_LOGOS = [
-  { name: "Tata Motors", symbol: "TATA" },
-  { name: "Infosys", symbol: "INFOSYS" },
-  { name: "Wipro", symbol: "WIPRO" },
-  { name: "Tech Mahindra", symbol: "TECH M" },
-  { name: "Cognizant", symbol: "COGNIZANT" },
-  { name: "Amazon", symbol: "AMAZON" },
-  { name: "Accenture", symbol: "ACCENTURE" },
-  { name: "L&T Infotech", symbol: "L&T" },
-  { name: "Reliance", symbol: "RELIANCE" },
-  { name: "Capgemini", symbol: "CAPGEMINI" },
-  { name: "HCL Tech", symbol: "HCL" },
-  { name: "Persistent", symbol: "PERSISTENT" }
+  { name: "Tata Motors", logo: "/clients/tata-motors.svg" },
+  { name: "Infosys", logo: "/clients/infosys.svg" },
+  { name: "Wipro", logo: "/clients/wipro.svg" },
+  { name: "Tech Mahindra", logo: "/clients/tech-mahindra.png" },
+  { name: "Cognizant", logo: "/clients/cognizant.svg" },
+  { name: "Amazon", logo: "/clients/amazon.svg" },
+  { name: "Accenture", logo: "/clients/accenture.svg" },
+  { name: "L&T Infotech", logo: "/clients/lt-infotech.svg" },
+  { name: "Reliance", logo: "/clients/reliance.svg" },
+  { name: "Capgemini", logo: "/clients/capgemini.svg" },
+  { name: "HCL Tech", logo: "/clients/hcl-tech.svg" },
+  { name: "Persistent", logo: "/clients/persistent.svg" }
 ];
 
 export const INITIAL_LEADS = [

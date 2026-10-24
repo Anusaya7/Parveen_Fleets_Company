@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ShieldCheck, AlertTriangle, Radio, Users, CheckCircle, Navigation, Gauge, KeyRound, QrCode, FileText, UserCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Radio, Users, CheckCircle, Navigation, Gauge, KeyRound, QrCode, FileText, UserCheck, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SAFETY_FEATURES } from '../data/mockData';
 
 const iconMap = {
@@ -18,14 +17,98 @@ const iconMap = {
   'background-verified': ShieldCheck
 };
 
+const PROTOCOL_STEPS = [
+  {
+    step: 1,
+    time: '0 TO 5 SECONDS',
+    title: 'SOS Alert Broadcasted',
+    text: 'Physical cab button or mobile app trigger ping received by 24x7 Pune Central Command.'
+  },
+  {
+    step: 2,
+    time: '15 SECONDS',
+    title: 'Voice Intercom & Live Video',
+    text: 'Operator establishes handsfree dual-way cab intercom & locks live GPS telemetry stream.'
+  },
+  {
+    step: 3,
+    time: '45 SECONDS',
+    title: 'Patrol & Security Dispatch',
+    text: 'Nearest ground quick response marshal deployed; Corporate HR security lead automatically alerted.'
+  },
+  {
+    step: 4,
+    time: 'RESOLVED',
+    title: 'Safe Reach Validated',
+    text: 'Employee confirmed 100% secure with digital incident audit log registered for enterprise compliance.'
+  }
+];
+
+function getVisibleCount() {
+  if (typeof window === 'undefined') return 4;
+  if (window.innerWidth <= 680) return 1;
+  if (window.innerWidth <= 1100) return 2;
+  return 4;
+}
+
 export default function SafetyModuleSection({ onOpenQuote }) {
   const [simulatorStep, setSimulatorStep] = useState(0);
   const [simulatorActive, setSimulatorActive] = useState(false);
+  const [index, setIndex] = useState(0);
+  const [visibleCount, setVisibleCount] = useState(4);
+  const [paused, setPaused] = useState(false);
   const simulatorTimers = useRef([]);
+  const viewportRef = useRef(null);
+  const maxIndex = Math.max(0, SAFETY_FEATURES.length - visibleCount);
+
+  const scrollToIndex = (nextIndex) => {
+    const viewport = viewportRef.current;
+    const card = viewport?.querySelector('.safety-feature-card');
+    if (!viewport || !card) return;
+    const gap = Number.parseFloat(getComputedStyle(viewport).gap) || 0;
+    const bounded = Math.max(0, Math.min(nextIndex, maxIndex));
+    viewport.scrollTo({ left: bounded * (card.offsetWidth + gap), behavior: 'smooth' });
+    setIndex(bounded);
+  };
+
+  const go = (direction) => {
+    if (maxIndex === 0) return;
+    let next = index + direction;
+    if (next < 0) next = maxIndex;
+    if (next > maxIndex) next = 0;
+    scrollToIndex(next);
+  };
 
   useEffect(() => () => {
     simulatorTimers.current.forEach((timer) => window.clearTimeout(timer));
   }, []);
+
+  useEffect(() => {
+    const onResize = () => setVisibleCount(getVisibleCount());
+    onResize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    setIndex(0);
+    viewportRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+  }, [visibleCount]);
+
+  useEffect(() => {
+    if (paused || maxIndex === 0) return undefined;
+    const timer = window.setInterval(() => {
+      const viewport = viewportRef.current;
+      const card = viewport?.querySelector('.safety-feature-card');
+      if (!viewport || !card) return;
+      const gap = Number.parseFloat(getComputedStyle(viewport).gap) || 0;
+      const current = Math.round(viewport.scrollLeft / (card.offsetWidth + gap));
+      const next = current >= maxIndex ? 0 : current + 1;
+      viewport.scrollTo({ left: next * (card.offsetWidth + gap), behavior: 'smooth' });
+      setIndex(next);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [paused, maxIndex]);
 
   const startSimulator = () => {
     simulatorTimers.current.forEach((timer) => window.clearTimeout(timer));
@@ -46,224 +129,129 @@ export default function SafetyModuleSection({ onOpenQuote }) {
   };
 
   return (
-    <section id="safety" className="section-padding bg-obsidian mesh-grid" style={{ position: 'relative' }}>
+    <section id="safety" className="safety-section section-padding">
       
-      {/* Background Soft Emerald Glow */}
-      <div 
-        style={{ 
-          position: 'absolute',
-          width: '650px', 
-          height: '650px', 
-          top: '15%', 
-          left: '-10%',
-          background: 'radial-gradient(circle, rgba(0, 200, 150, 0.14) 0%, transparent 70%)',
-          filter: 'blur(130px)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }} 
-      />
+      {/* Background Ambient Glow */}
+      <div className="ambient-glow ambient-blue" style={{ width: '550px', height: '550px', top: '15%', left: '-10%' }} />
 
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         
         {/* Section Header */}
-        <div style={{ textAlign: 'center', maxWidth: '820px', margin: '0 auto 4rem auto' }}>
-          <div className="pill-emerald" style={{ marginBottom: '1rem' }}>
+        <div className="section-head">
+          <div className="pill-gold" style={{ marginBottom: '1rem' }}>
             <ShieldCheck size={14} />
             <span>Uncompromising Security Standards</span>
           </div>
-          <h2 style={{ fontSize: 'clamp(2.2rem, 3.8vw, 3.4rem)', marginBottom: '1.25rem' }}>
-            Zero-Compromise <span className="text-gradient-emerald">Employee Safety Architecture</span>
+          <h2 style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', marginBottom: '1.25rem' }}>
+            Zero-Compromise <span className="text-gradient-gold">Employee Safety Architecture</span>
           </h2>
-          <p style={{ fontSize: '1.1rem', color: '#94A3B8', lineHeight: 1.75 }}>
+          <p style={{ fontSize: '1.08rem', color: '#5B6F86', lineHeight: 1.65 }}>
             Building enterprise trust through proactive defense. Every vehicle, trip, and chauffeur is bound by 12 comprehensive safety checkpoints certified under PoSH guidelines.
           </p>
         </div>
 
-        {/* Interactive Safety Command Simulator */}
-        <motion.div 
-          className="glass-panel"
-          initial={{ opacity: 0, y: 25 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7 }}
-          style={{
-            padding: '2.5rem',
-            borderRadius: '24px',
-            border: '1px solid rgba(0, 200, 150, 0.3)',
-            marginBottom: '4.5rem',
-            background: 'rgba(15, 23, 42, 0.72)',
-            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.75), 0 0 35px rgba(0, 200, 150, 0.12)'
-          }}
-        >
-          <p style={{ color: '#94A3B8', fontSize: '0.8rem', marginBottom: '1.25rem' }}>
-            Demonstration only. This simulation illustrates how the 24x7 Pune Central Command Center resolves alerts in sub-seconds.
+        <div className="safety-sim navy-surface">
+          <p className="safety-sim-note">
+            Demonstration only. This simulation does not contact emergency services or represent a live trip.
           </p>
 
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '1rem',
-            marginBottom: '2rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-            paddingBottom: '1.25rem'
-          }}>
+          <div className="safety-sim-head">
             <div>
-              <span className="pill-gold" style={{ marginBottom: '0.4rem', fontSize: '0.72rem' }}>
-                LIVE DEMO • EMERGENCY RESPONSE SIMULATOR
-              </span>
-              <h3 style={{ fontSize: '1.5rem', color: '#FFFFFF', fontWeight: 800, marginTop: '0.35rem' }}>
-                Test The Parveen Fleets Instant Response Protocol
-              </h3>
+              <span>Demonstration • Emergency Response Simulator</span>
+              <h3>Test The Parveen Fleets Instant Response Protocol</h3>
             </div>
-
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              {!simulatorActive ? (
-                <button onClick={startSimulator} className="btn-emerald" style={{ padding: '0.7rem 1.4rem', fontSize: '0.86rem' }}>
-                  <AlertTriangle size={15} /> Simulate SOS Trigger
-                </button>
-              ) : (
-                <button onClick={resetSimulator} className="btn-ghost" style={{ padding: '0.7rem 1.4rem', fontSize: '0.86rem' }}>
-                  Reset Protocol
-                </button>
-              )}
-            </div>
+            {!simulatorActive ? (
+              <button type="button" onClick={startSimulator} className="btn-gold safety-sim-trigger">
+                <AlertTriangle size={15} /> Simulate SOS Trigger
+              </button>
+            ) : (
+              <button type="button" onClick={resetSimulator} className="btn-outline safety-sim-trigger">
+                Reset Protocol
+              </button>
+            )}
           </div>
 
-          {/* Steps Timeline Grid */}
-          <div aria-live="polite" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '1.25rem'
-          }}>
-            <div style={{
-              background: simulatorStep >= 1 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(5, 8, 15, 0.6)',
-              border: '1px solid ' + (simulatorStep >= 1 ? '#EF4444' : 'rgba(255, 255, 255, 0.08)'),
-              borderRadius: '16px',
-              padding: '1.4rem',
-              transition: 'all 0.3s ease'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: simulatorStep >= 1 ? '#F87171' : '#94A3B8', fontWeight: 700, marginBottom: '0.4rem' }}>
-                STEP 1 • 0 TO 5 SECONDS
-              </div>
-              <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '1rem', marginBottom: '0.35rem' }}>
-                SOS Alert Broadcasted
-              </div>
-              <p style={{ fontSize: '0.82rem', color: '#CBD5E1', lineHeight: 1.5 }}>
-                Physical cab button or mobile app trigger ping received by 24x7 Pune Central Command.
-              </p>
-            </div>
-
-            <div style={{
-              background: simulatorStep >= 2 ? 'rgba(245, 158, 11, 0.18)' : 'rgba(5, 8, 15, 0.6)',
-              border: '1px solid ' + (simulatorStep >= 2 ? '#F59E0B' : 'rgba(255, 255, 255, 0.08)'),
-              borderRadius: '16px',
-              padding: '1.4rem',
-              transition: 'all 0.3s ease'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: simulatorStep >= 2 ? '#FBBF24' : '#94A3B8', fontWeight: 700, marginBottom: '0.4rem' }}>
-                STEP 2 • 15 SECONDS
-              </div>
-              <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '1rem', marginBottom: '0.35rem' }}>
-                Voice Intercom & Live Stream
-              </div>
-              <p style={{ fontSize: '0.82rem', color: '#CBD5E1', lineHeight: 1.5 }}>
-                Operator establishes handsfree dual-way cab intercom & locks live GPS telemetry stream.
-              </p>
-            </div>
-
-            <div style={{
-              background: simulatorStep >= 3 ? 'rgba(0, 200, 150, 0.18)' : 'rgba(5, 8, 15, 0.6)',
-              border: '1px solid ' + (simulatorStep >= 3 ? '#00C896' : 'rgba(255, 255, 255, 0.08)'),
-              borderRadius: '16px',
-              padding: '1.4rem',
-              transition: 'all 0.3s ease'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: simulatorStep >= 3 ? '#00C896' : '#94A3B8', fontWeight: 700, marginBottom: '0.4rem' }}>
-                STEP 3 • 45 SECONDS
-              </div>
-              <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '1rem', marginBottom: '0.35rem' }}>
-                Marshal & Security Dispatch
-              </div>
-              <p style={{ fontSize: '0.82rem', color: '#CBD5E1', lineHeight: 1.5 }}>
-                Nearest ground quick response marshal deployed; Corporate HR security lead automatically alerted.
-              </p>
-            </div>
-
-            <div style={{
-              background: simulatorStep >= 4 ? 'rgba(0, 200, 150, 0.25)' : 'rgba(5, 8, 15, 0.6)',
-              border: '1px solid ' + (simulatorStep >= 4 ? '#00C896' : 'rgba(255, 255, 255, 0.08)'),
-              borderRadius: '16px',
-              padding: '1.4rem',
-              transition: 'all 0.3s ease'
-            }}>
-              <div style={{ fontSize: '0.74rem', color: simulatorStep >= 4 ? '#00C896' : '#94A3B8', fontWeight: 700, marginBottom: '0.4rem' }}>
-                STEP 4 • RESOLVED
-              </div>
-              <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '1rem', marginBottom: '0.35rem' }}>
-                Incident Logged & Cleared
-              </div>
-              <p style={{ fontSize: '0.82rem', color: '#CBD5E1', lineHeight: 1.5 }}>
-                Commuter marked safe with digital OTP verification; complete telemetry audit report archived.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 12 Point Safety Architecture Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '1.75rem'
-        }}>
-          {SAFETY_FEATURES.map((item, index) => {
-            const IconComponent = iconMap[item.id] || ShieldCheck;
-
-            return (
-              <motion.div
-                key={item.id}
-                className="glass-card feature-glass-card group"
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.45, delay: index * 0.04 }}
-                whileHover={{ y: -5 }}
-                style={{
-                  padding: '1.75rem',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1.15rem',
-                  borderRadius: '18px'
-                }}
+          <div className="safety-steps" aria-live="polite">
+            {PROTOCOL_STEPS.map((item) => (
+              <article
+                key={item.step}
+                className={`safety-step is-step-${item.step} ${simulatorStep >= item.step ? 'is-active' : ''}`}
               >
-                <div style={{
-                  width: '46px',
-                  height: '46px',
-                  borderRadius: '12px',
-                  background: 'rgba(0, 200, 150, 0.1)',
-                  border: '1px solid rgba(0, 200, 150, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#00C896',
-                  flexShrink: 0,
-                  transition: 'all 0.3s ease'
-                }} className="group-hover:border-[#D4AF37] group-hover:text-[#D4AF37]">
-                  <IconComponent size={22} />
-                </div>
+                <div className="safety-step-label">Step {item.step} • {item.time}</div>
+                <h4>{item.title}</h4>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
 
-                <div>
-                  <h4 style={{ fontSize: '1.05rem', color: '#FFFFFF', marginBottom: '0.35rem', fontWeight: 700 }}>
-                    {item.title}
-                  </h4>
-                  <p style={{ fontSize: '0.86rem', color: '#94A3B8', lineHeight: 1.6 }}>
-                    {item.desc}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+          <div className="safety-sim-cta">
+            <button type="button" onClick={() => onOpenQuote()} className="safety-sim-cta-btn">
+              Discuss your employee safety requirements
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div
+          className="safety-features-stage"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          <div className="safety-features-toolbar">
+            <div className="services-nav-group">
+              <button type="button" className="services-nav" aria-label="Previous safety protocols" onClick={() => go(-1)}>
+                <ChevronLeft size={20} />
+              </button>
+              <button type="button" className="services-nav" aria-label="Next safety protocols" onClick={() => go(1)}>
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            ref={viewportRef}
+            className="safety-viewport"
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Employee safety protocols"
+            onScroll={(event) => {
+              const viewport = event.currentTarget;
+              const card = viewport.querySelector('.safety-feature-card');
+              if (!card) return;
+              const gap = Number.parseFloat(getComputedStyle(viewport).gap) || 0;
+              setIndex(Math.round(viewport.scrollLeft / (card.offsetWidth + gap)));
+            }}
+          >
+            {SAFETY_FEATURES.map((item) => {
+              const Icon = iconMap[item.id] || ShieldCheck;
+
+              return (
+                <article key={item.id} className="glass-card safety-feature-card">
+                  <div className="safety-feature-top">
+                    <div className="safety-feature-icon">
+                      <Icon size={22} />
+                    </div>
+                    <span className="safety-feature-tag">{item.tag}</span>
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="services-dots" role="tablist" aria-label="Safety protocol carousel pages">
+            {Array.from({ length: maxIndex + 1 }, (_, page) => (
+              <button
+                key={page}
+                type="button"
+                role="tab"
+                aria-selected={index === page}
+                className={index === page ? 'is-active' : ''}
+                onClick={() => scrollToIndex(page)}
+              />
+            ))}
+          </div>
         </div>
 
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
+import StatsSection from './components/StatsSection';
 import ClientsMarquee from './components/ClientsMarquee';
 import AboutSection from './components/AboutSection';
 import ServicesSection from './components/ServicesSection';
@@ -21,6 +22,7 @@ import BlogModal from './components/BlogModal';
 import AdminPortal from './components/AdminPortal';
 import { INITIAL_LEADS } from './data/mockData';
 import { isLocalLeadMode, loadLocalLeads, persistLocalLeads, saveLead } from './data/leadStore';
+import useScrollReveal from './hooks/useScrollReveal';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('website'); // 'website' | 'admin'
@@ -29,10 +31,24 @@ export default function App() {
   const [quoteModalData, setQuoteModalData] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeBlog, setActiveBlog] = useState(null);
+  useScrollReveal(currentView === 'website');
 
   useEffect(() => {
     if (isLocalLeadMode) persistLocalLeads(leadsList);
   }, [leadsList]);
+
+  useEffect(() => {
+    if (currentView !== 'website') return undefined;
+    try {
+      window.history.scrollRestoration = 'manual';
+    } catch {
+      /* ignore */
+    }
+    if (!window.location.hash) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+    return undefined;
+  }, [currentView]);
 
   const handleNewLeadAdded = async (newLead) => {
     const saved = await saveLead(newLead);
@@ -91,6 +107,8 @@ export default function App() {
             if (fleetElem) fleetElem.scrollIntoView({ behavior: 'smooth' });
           }}
         />
+
+        <StatsSection />
 
         {/* 3. Infinite Corporate Client Logo Marquee */}
         <ClientsMarquee />

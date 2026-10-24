@@ -170,23 +170,12 @@ export default function AdminPortal({ onBackToWebsite, leadsList, setLeadsList }
           boxShadow: '0 30px 80px rgba(0, 0, 0, 0.9)'
         }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{
-              width: '54px',
-              height: '54px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #081B3A 0%, #113D89 60%, #FFD700 100%)',
-              border: '2px solid #FFD700',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#FFFFFF',
-              fontWeight: 900,
-              fontSize: '1.6rem',
-              marginBottom: '1rem',
-              boxShadow: '0 0 20px rgba(255, 215, 0, 0.4)'
-            }}>
-              PF
-            </div>
+            <img
+              src="/parveen-fleets-logo.png"
+              alt="Parveen Fleets Pvt Ltd"
+              className="brand-logo brand-logo-admin"
+              style={{ margin: '0 auto 1rem' }}
+            />
             <h2 style={{ fontSize: '1.6rem', color: '#FFFFFF', fontWeight: 900, marginBottom: '0.25rem' }}>
               PARVEEN FLEETS
             </h2>
@@ -288,22 +277,13 @@ export default function AdminPortal({ onBackToWebsite, leadsList, setLeadsList }
             <ArrowLeft size={14} /> Back to Website
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #081B3A, #FFD700)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#050A12',
-              fontWeight: 900
-            }}>
-              PF
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <img
+              src="/parveen-fleets-logo.png"
+              alt="Parveen Fleets Pvt Ltd"
+              className="brand-logo brand-logo-admin-bar"
+            />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>PARVEEN FLEETS PVT LTD</div>
               <div style={{ fontSize: '0.7rem', color: '#FFD700', fontWeight: 600 }}>Command & Control Hub</div>
             </div>
           </div>

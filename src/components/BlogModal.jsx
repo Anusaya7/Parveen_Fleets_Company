@@ -7,16 +7,13 @@ export default function BlogModal({ blog, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className="glass-panel"
+        className="navy-surface glass-panel"
         style={{
           width: 'clamp(320px, 94vw, 750px)',
           maxHeight: '90vh',
           overflowY: 'auto',
-          background: 'linear-gradient(135deg, rgba(20, 55, 91, 0.98) 0%, rgba(11, 30, 54, 0.99) 100%)',
-          border: '1.5px solid rgba(255, 215, 0, 0.4)',
-          borderRadius: '24px',
+          borderRadius: '22px',
           padding: '2.5rem',
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.9)',
           position: 'relative'
         }}
         onClick={(e) => e.stopPropagation()}
