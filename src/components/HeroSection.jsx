@@ -1,11 +1,32 @@
-import React, { useState } from 'react';
-import { Phone, ArrowRight, ShieldCheck, Zap, Sparkles, Car } from 'lucide-react';
-import { HERO_STATS } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  ArrowRight, 
+  ShieldCheck, 
+  Zap, 
+  Sparkles, 
+  Car, 
+  Radio, 
+  MapPin, 
+  Clock, 
+  TrendingUp,
+  Building2,
+  CheckCircle2,
+  ChevronRight
+} from 'lucide-react';
 
 export default function HeroSection({ onOpenQuote, onBookFleet }) {
   const [quickService, setQuickService] = useState('Employee Transportation');
   const [quickCity, setQuickCity] = useState('Pune');
   const [quickPassengers, setQuickPassengers] = useState('10 - 50 Employees');
+  // Dynamic live telematics ticker
+  const [livePings, setLivePings] = useState(248);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLivePings((prev) => prev + (Math.random() > 0.4 ? 1 : 0));
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleQuickEstimate = (e) => {
     e.preventDefault();
@@ -16,371 +37,600 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
     });
   };
 
+  const STATS_BAND = [
+    {
+      stat: "2012 → 2021",
+      label: "Genesis to Pvt Ltd",
+      sub: "13+ Years of Sovereign Corporate Trust",
+      icon: TrendingUp,
+      badge: "Sovereign Heritage"
+    },
+    {
+      stat: "112+",
+      label: "Operational Hubs",
+      sub: "Pan-India Tier 1 & Tier 2 Coverage",
+      icon: MapPin,
+      badge: "National Network"
+    },
+    {
+      stat: "3 Major Hubs",
+      label: "Strategic Regional HQ",
+      sub: "Pune (HQ) • Mumbai • Delhi NCR • Hyderabad",
+      icon: Building2,
+      badge: "Tier-1 Depots"
+    },
+    {
+      stat: "100%",
+      label: "Certified & Verified",
+      sub: "ISO 9001:2015 & PoSH Compliant Chauffeurs",
+      icon: ShieldCheck,
+      badge: "Zero Compromise"
+    }
+  ];
+
   return (
-    <section id="home" className="home-hero" style={{
-      position: 'relative',
-      minHeight: 'calc(100vh - 150px)',
-      display: 'flex',
-      alignItems: 'center',
-      padding: '5rem 0 4rem',
-      overflow: 'hidden',
-      background: 'linear-gradient(130deg, #FAFCFF 0%, #EFF5FB 58%, #E6EFF8 100%)'
-    }}>
-      {/* Background Ambient Glows */}
-      <div className="ambient-glow ambient-blue" style={{ width: '600px', height: '600px', top: '-10%', left: '-10%' }} />
-      <div className="ambient-glow ambient-gold" style={{ width: '500px', height: '500px', top: '30%', right: '-10%' }} />
+    <section 
+      id="home" 
+      className="bg-obsidian mesh-grid" 
+      style={{
+        position: 'relative',
+        padding: '2.5rem 0 5rem',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Cinematic Headquarters Background Image Layer (Cleaned Facade, No 'GLOBALSPIRE HQ') */}
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage: "url('/images/hero_fleet_clean_hq.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 40%',
+          opacity: 0.36,
+          filter: 'saturate(1.12) contrast(1.06)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+      />
 
-      {/* Grid Pattern Overlay */}
-      <div className="bg-grid-pattern" style={{ position: 'absolute', inset: 0, opacity: 0.6, pointerEvents: 'none' }} />
+      {/* Multi-tier Obsidian Vignette & Scrim Overlays for Superior Contrast & Readability */}
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(90deg, #05080F 0%, rgba(5, 8, 15, 0.94) 38%, rgba(5, 8, 15, 0.72) 65%, rgba(5, 8, 15, 0.50) 85%, rgba(5, 8, 15, 0.88) 100%)',
+          pointerEvents: 'none',
+          zIndex: 1
+        }}
+      />
+      <div 
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, #05080F 0%, transparent 18%, transparent 75%, #05080F 100%)',
+          pointerEvents: 'none',
+          zIndex: 1
+        }}
+      />
 
-      <div className="container" style={{ position: 'relative', zIndex: 1, width: '100%' }}>
+      {/* Massive Soft Emerald Radial Glow behind text */}
+      <div 
+        style={{ 
+          position: 'absolute',
+          width: '750px', 
+          height: '750px', 
+          top: '-15%', 
+          left: '-15%',
+          background: 'radial-gradient(circle, rgba(0, 200, 150, 0.22) 0%, rgba(5, 8, 15, 0) 70%)',
+          filter: 'blur(130px)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} 
+      />
+
+      {/* Secondary Soft Emerald to Cyan Glow on right */}
+      <div 
+        style={{ 
+          position: 'absolute',
+          width: '700px', 
+          height: '700px', 
+          top: '0%', 
+          right: '-10%',
+          background: 'radial-gradient(circle, rgba(0, 200, 150, 0.20) 0%, rgba(0, 229, 255, 0.08) 40%, rgba(5, 8, 15, 0) 70%)',
+          filter: 'blur(130px)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} 
+      />
+
+      <div className="container" style={{ position: 'relative', zIndex: 2, width: '100%' }}>
+        
+        {/* Main Grid: Left Headline/CTAs & Right Cinematic PDF Vehicle (Top-Aligned) */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '3.5rem',
-          alignItems: 'center'
+          gap: '3rem',
+          alignItems: 'start'
         }}>
           
-          {/* Left Column: Headline & Action */}
-          <div>
-            {/* Top Eyebrow Tag */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem' }}>
-              <div className="pill-gold">
-                <Sparkles size={14} />
-                <span>Trusted corporate mobility partner</span>
+          {/* Left Column: Headline, Trust Badges, CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Badges Pill Row */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+              <div className="pill-emerald" style={{ boxShadow: '0 0 18px rgba(0, 200, 150, 0.3)' }}>
+                <Radio size={13} className="animate-pulse" />
+                <span>₹100Cr+ Corporate Fleet Standard</span>
               </div>
-              <div className="pill-blue">
-                <span>Since 2012</span>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.35rem 0.85rem',
+                borderRadius: '999px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                color: '#CBD5E1',
+                fontSize: '0.78rem',
+                fontWeight: 600
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 8px #00E5FF' }} />
+                <span>Pan-India Tier-1 Mobility</span>
               </div>
             </div>
 
-            {/* Headline */}
+            {/* Eyebrow Label */}
+            <div className="eyebrow-label" style={{ marginBottom: '0.85rem' }}>
+              INDIA'S PREMIER ENTERPRISE CHAUFFEUR MOBILITY
+            </div>
+
+            {/* Massive H1 with gradient text: Pure White to Emerald-Cyan Gradient */}
             <h1 style={{
-              fontSize: 'clamp(2.4rem, 5vw, 3.8rem)',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.15,
-              marginBottom: '1.5rem',
-              color: '#102B4D'
+              fontSize: 'clamp(2.5rem, 5.2vw, 4.2rem)',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+              lineHeight: 1.12,
+              marginBottom: '1.35rem',
+              color: '#FFFFFF'
             }}>
-              India's Most Trusted
+              Built on Trust.
               <br />
-              <span className="text-gradient-gold">Corporate Transportation</span>
-              <br />
-              Partner
+              Powered by <span className="text-gradient-emerald-cyan">Innovation.</span>
             </h1>
 
-            <p className="hero-tagline">
-              Redefining Travel with Safety, Comfort and Innovation
-            </p>
-
-            {/* Subheading */}
+            {/* Editorial Subheading in Slate-300 */}
             <p style={{
-              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
-              color: '#526A84',
-              lineHeight: 1.6,
+              fontSize: 'clamp(1.05rem, 1.8vw, 1.22rem)',
+              color: '#CBD5E1',
+              lineHeight: 1.75,
               marginBottom: '2.25rem',
-              maxWidth: '620px'
+              maxWidth: '65ch',
+              fontWeight: 400
             }}>
-              Technology-driven employee transportation, cab rentals, bus rentals, airport transfers, and fleet solutions across India — designed around safety, comfort, and reliability.
+              Precision corporate transportation, executive chauffeur transit, and smart telematics 
+              engineered for India’s Fortune 500 enterprises. Delivering 99.8% on-time arrivals 
+              across 112+ strategic hubs.
             </p>
 
-            {/* Primary quote and contact actions */}
+            {/* Two Main CTAs: Emerald Primary with Gold Hover Border + Ghost Secondary */}
             <div style={{
               display: 'flex',
               flexWrap: 'wrap',
               gap: '1rem',
-              marginBottom: '2.5rem'
+              alignItems: 'center',
+              marginBottom: '2.75rem'
             }}>
               <button
                 onClick={() => onOpenQuote()}
-                className="btn-gold"
-                style={{ fontSize: '1rem', padding: '0.95rem 1.85rem' }}
+                className="btn-emerald"
+                style={{ fontSize: '1rem', padding: '1rem 2.2rem' }}
+                id="hero-request-quote-btn"
               >
-                <span>Get Instant Quote</span>
+                <span>Request Enterprise Quote</span>
                 <ArrowRight size={18} />
               </button>
 
               <button
                 onClick={() => onBookFleet()}
-                className="btn-outline"
-                style={{ fontSize: '1rem', padding: '0.95rem 1.75rem' }}
+                className="btn-ghost"
+                style={{ fontSize: '1rem', padding: '1rem 1.85rem' }}
+                id="hero-explore-fleet-btn"
               >
-                <Car size={18} color="#FFD700" />
-                <span>Book Fleet</span>
+                <Car size={18} color="#00C896" />
+                <span>Explore Fleet</span>
               </button>
 
               <a
                 href="tel:+919545899838"
-                className="btn-outline"
-                style={{ fontSize: '0.95rem', padding: '0.95rem 1.5rem' }}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  color: '#94A3B8',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '8px',
+                  transition: 'color 0.2s ease'
+                }}
+                className="hover-emerald"
               >
-                <Phone size={17} color="#FFD700" />
-                <span>Call Now</span>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00C896', display: 'inline-block', boxShadow: '0 0 10px #00C896' }} />
+                <span>24/7 Hotline: +91 95458 99838</span>
               </a>
-
             </div>
 
-            {/* Quick Interactive Fleet Estimator Bar */}
+            {/* Quick Interactive Fleet Estimator Glass Surface */}
             <div className="glass-panel" style={{
-              padding: '1.25rem 1.5rem',
-              borderRadius: '14px',
-              border: '1px solid rgba(255, 215, 0, 0.25)',
-              background: 'rgba(19, 49, 82, 0.94)',
-              backdropFilter: 'blur(18px)'
+              padding: '1.35rem 1.6rem',
+              borderRadius: '20px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(15, 23, 42, 0.7)',
+              position: 'relative'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem', color: '#FFD700', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <Zap size={14} /> Quick Corporate Fleet Estimator
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Zap size={15} color="#00C896" />
+                  <span style={{ color: '#F8FAFC', fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    Instant Corporate Dispatch Estimator
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.72rem', color: '#00C896', fontWeight: 600, background: 'rgba(0, 200, 150, 0.1)', padding: '0.2rem 0.6rem', borderRadius: '999px', border: '1px solid rgba(0, 200, 150, 0.25)' }}>
+                  30-Min SLA Response
+                </span>
               </div>
 
               <form onSubmit={handleQuickEstimate} style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                gap: '0.75rem',
-                alignItems: 'center'
+                gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+                gap: '0.85rem',
+                alignItems: 'flex-end'
               }}>
                 <div>
-                  <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: '0.25rem' }}>Service</label>
+                  <label style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    MOBILITY SERVICE
+                  </label>
                   <select
                     value={quickService}
                     onChange={(e) => setQuickService(e.target.value)}
                     className="pf-input"
-                    style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.65rem 0.85rem', fontSize: '0.85rem' }}
                   >
-                    <option value="Employee Transportation" style={{ background: '#081B3A' }}>Employee Transport</option>
-                    <option value="Corporate Cab Services" style={{ background: '#081B3A' }}>Corporate Cabs</option>
-                    <option value="Luxury Car Rentals" style={{ background: '#081B3A' }}>Luxury Rentals (CXO)</option>
-                    <option value="Bus & Coach Rentals" style={{ background: '#081B3A' }}>Bus & Coach Rentals</option>
-                    <option value="Airport Transfers" style={{ background: '#081B3A' }}>Airport Transfers</option>
+                    <option value="Employee Transportation">Employee Transportation</option>
+                    <option value="Executive Chauffeur Transit">Executive Chauffeur (CXO)</option>
+                    <option value="Corporate Cab Solutions">Dedicated Corporate Cabs</option>
+                    <option value="Luxury Bus & Coach Rentals">Luxury Coaches (Volvo/Scania)</option>
+                    <option value="Airport VIP Transfers">Airport VIP Chauffeur</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: '0.25rem' }}>Location / City</label>
+                  <label style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    METRO / OPERATING HUB
+                  </label>
                   <select
                     value={quickCity}
                     onChange={(e) => setQuickCity(e.target.value)}
                     className="pf-input"
-                    style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.65rem 0.85rem', fontSize: '0.85rem' }}
                   >
-                    <option value="Pune" style={{ background: '#081B3A' }}>Pune (HQ)</option>
-                    <option value="Mumbai" style={{ background: '#081B3A' }}>Mumbai</option>
-                    <option value="Delhi NCR" style={{ background: '#081B3A' }}>Delhi NCR</option>
-                    <option value="Hyderabad" style={{ background: '#081B3A' }}>Hyderabad</option>
-                    <option value="Bengaluru" style={{ background: '#081B3A' }}>Bengaluru</option>
-                    <option value="PAN India" style={{ background: '#081B3A' }}>PAN India (Multi-City)</option>
+                    <option value="Pune">Pune (National HQ)</option>
+                    <option value="Mumbai">Mumbai (BKC Hub)</option>
+                    <option value="Delhi NCR">Delhi NCR (Aerocity)</option>
+                    <option value="Hyderabad">Hyderabad (Hitec City)</option>
+                    <option value="Bengaluru">Bengaluru (Whitefield)</option>
+                    <option value="PAN India Multi-City">PAN India (Multi-City)</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.75rem', color: '#94A3B8', display: 'block', marginBottom: '0.25rem' }}>Volume / Size</label>
+                  <label style={{ fontSize: '0.72rem', color: '#94A3B8', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
+                    EMPLOYEE VOLUME
+                  </label>
                   <select
                     value={quickPassengers}
                     onChange={(e) => setQuickPassengers(e.target.value)}
                     className="pf-input"
-                    style={{ padding: '0.6rem 0.75rem', fontSize: '0.85rem' }}
+                    style={{ padding: '0.65rem 0.85rem', fontSize: '0.85rem' }}
                   >
-                    <option value="1 - 10 Passengers" style={{ background: '#081B3A' }}>1 - 10 Passengers</option>
-                    <option value="10 - 50 Employees" style={{ background: '#081B3A' }}>10 - 50 Employees</option>
-                    <option value="50 - 200 Employees" style={{ background: '#081B3A' }}>50 - 200 Employees</option>
-                    <option value="200+ Enterprise" style={{ background: '#081B3A' }}>200+ Enterprise</option>
+                    <option value="1 - 10 Passengers">1 - 10 Passengers (Chauffeur)</option>
+                    <option value="10 - 50 Employees">10 - 50 Employees (Mid-Tier)</option>
+                    <option value="50 - 250 Employees">50 - 250 Employees (Corporate)</option>
+                    <option value="250+ Enterprise Scale">250+ Enterprise Scale (Custom)</option>
                   </select>
                 </div>
 
-                <div style={{ alignSelf: 'flex-end' }}>
+                <div>
                   <button
                     type="submit"
-                    className="btn-gold"
-                    style={{ width: '100%', padding: '0.65rem 1rem', fontSize: '0.85rem' }}
+                    className="btn-emerald"
+                    style={{ width: '100%', padding: '0.72rem 1rem', fontSize: '0.86rem' }}
                   >
-                    Calculate
+                    Calculate SLA
                   </button>
                 </div>
               </form>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Right Column: Visual Fleet Presentation with Floating Telematics */}
-          <div className="hero-visual-column" style={{ position: 'relative' }}>
-            
-            {/* Main Visual Frame */}
-            <div className="hero-image-frame" style={{
+          {/* Right Column: Authentic Chauffeur & Vehicle Floating in Front of Cinematic HQ */}
+          <motion.div 
+            style={{ 
               position: 'relative',
-              borderRadius: '24px',
-              overflow: 'hidden',
-              border: '1px solid rgba(255, 255, 255, 0.26)',
-              boxShadow: '0 32px 75px rgba(4, 21, 43, 0.45), 0 0 55px rgba(93, 160, 218, 0.18)'
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              width: '100%',
+              marginTop: '0.5rem'
+            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* Seamless Studio Vehicle Display (Zero Green Box, Masked Bottom Blend) */}
+            <div style={{
+              position: 'relative',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '480px'
             }}>
-              <img
-                src="/images/hero_fleet.jpg"
-                alt="Parveen Fleets Luxury Fleet Showcase with Mercedes S-Class, Toyota Innova Hycross and Volvo Coach"
+              {/* Soft Emerald to Cyan Studio Radial Glow BEHIND Vehicle */}
+              <div style={{
+                position: 'absolute',
+                width: '580px',
+                height: '500px',
+                top: '40%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                background: 'radial-gradient(ellipse at 50% 50%, rgba(0, 200, 150, 0.28) 0%, rgba(0, 229, 255, 0.12) 42%, transparent 72%)',
+                filter: 'blur(60px)',
+                pointerEvents: 'none',
+                zIndex: 0
+              }} />
+
+              {/* Ground Shadow underneath the vehicle */}
+              <div style={{
+                position: 'absolute',
+                bottom: '15px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '84%',
+                height: '35px',
+                background: 'radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.55) 45%, transparent 75%)',
+                filter: 'blur(8px)',
+                pointerEvents: 'none',
+                zIndex: 1
+              }} />
+
+              {/* Real Vehicle & Chauffeur Image Floating in Foreground */}
+              <motion.img
+                src="/images/assets/car_innova_hycross_transparent.png"
+                alt="Parveen Fleets Toyota Innova Hycross & Chauffeur"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.55, ease: 'easeOut' }}
                 fetchPriority="high"
                 decoding="async"
                 style={{
                   width: '100%',
+                  maxWidth: '540px',
                   height: 'auto',
-                  display: 'block',
-                  transform: 'scale(1.02)',
-                  transition: 'transform 0.8s ease'
+                  maxHeight: '500px',
+                  objectFit: 'contain',
+                  position: 'relative',
+                  zIndex: 2,
+                  filter: 'drop-shadow(0 25px 35px rgba(0,0,0,0.9)) drop-shadow(0 0 25px rgba(0, 200, 150, 0.2))',
+                  maskImage: 'linear-gradient(to bottom, black 86%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 86%, transparent 100%)'
                 }}
               />
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to top, rgba(8, 25, 48, 0.86) 0%, rgba(8, 25, 48, 0.12) 60%, transparent 100%)'
-              }} />
 
-              {/* In-Image Caption */}
-              <div style={{
-                position: 'absolute',
-                bottom: '1.25rem',
-                left: '1.5rem',
-                right: '1.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '0.5rem'
-              }}>
-                <div>
-                  <div style={{ color: '#FFD700', fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em' }}>
-                    ENTERPRISE GRADE MOBILITY
-                  </div>
-                  <div style={{ color: '#FFFFFF', fontWeight: 800, fontSize: '1rem' }}>
-                    Toyota Hycross • Mercedes S-Class • Volvo Coaches
-                  </div>
-                </div>
-                <div style={{
-                  background: 'rgba(16, 185, 129, 0.2)',
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
-                  color: '#34D399',
-                  padding: '0.3rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
+              {/* Floating Badge 1: 100% PoSH & Police Verified (Top Left, Elevated Glassmorphism) */}
+              <motion.div 
+                className="hero-floating-glass"
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '-10px',
+                  padding: '0.85rem 1.25rem',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem'
+                  gap: '0.75rem',
+                  zIndex: 3
+                }}
+                animate={{ y: [0, -6, 0] }}
+                transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
+              >
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #00C896 0%, #00E5FF 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#05080F',
+                  boxShadow: '0 0 15px rgba(0, 200, 150, 0.4)'
                 }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-                  Live GPS Active
+                  <ShieldCheck size={22} />
                 </div>
-              </div>
-            </div>
+                <div>
+                  <div style={{ fontSize: '0.66rem', color: '#94A3B8', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    SAFETY INDEX
+                  </div>
+                  <div style={{ fontSize: '0.98rem', color: '#FFFFFF', fontWeight: 800 }}>
+                    100% PoSH & Verified
+                  </div>
+                </div>
+              </motion.div>
 
-            {/* Floating Telematics Widget 1: Top Left */}
-            <div className="glass-panel animate-float" style={{
-              position: 'absolute',
-              top: '-20px',
-              left: '-20px',
-              padding: '0.85rem 1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.85rem',
-              borderRadius: '14px',
-              border: '1px solid rgba(255, 215, 0, 0.35)',
-              boxShadow: '0 15px 35px rgba(0, 0, 0, 0.5)'
-            }}>
+              {/* Floating Badge 2: 99.8% On-Time SLA (Bottom Right, Elevated Glassmorphism) */}
+              <motion.div 
+                className="hero-floating-glass"
+                style={{
+                  position: 'absolute',
+                  bottom: '25px',
+                  right: '-10px',
+                  padding: '0.85rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  border: '1px solid rgba(0, 229, 255, 0.35)',
+                  zIndex: 3
+                }}
+                animate={{ y: [0, 6, 0] }}
+                transition={{ repeat: Infinity, duration: 5, ease: 'easeInOut', delay: 0.5 }}
+              >
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 200, 150, 0.15) 100%)',
+                  border: '1px solid rgba(0, 229, 255, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#00E5FF',
+                  boxShadow: '0 0 15px rgba(0, 229, 255, 0.3)'
+                }}>
+                  <Zap size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.66rem', color: '#94A3B8', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    ON-TIME PERFORMANCE
+                  </div>
+                  <div style={{ fontSize: '1rem', color: '#FFFFFF', fontWeight: 800 }}>
+                    <span className="font-mono" style={{ color: '#00E5FF' }}>99.8%</span> SLA Guaranteed
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Sub-Car Specification & Telematics Pill */}
               <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                display: 'flex',
+                position: 'absolute',
+                bottom: '-12px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'inline-flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                color: '#050A12'
+                gap: '0.65rem',
+                padding: '0.45rem 1.15rem',
+                background: 'rgba(15, 23, 42, 0.88)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderRadius: '999px',
+                border: '1px solid rgba(0, 200, 150, 0.25)',
+                zIndex: 3,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)'
               }}>
-                <ShieldCheck size={22} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>SAFETY INDEX</div>
-                <div style={{ fontSize: '1.05rem', color: '#FFFFFF', fontWeight: 800 }}>100% PoSH & Verified</div>
+                <Sparkles size={12} color="#00C896" />
+                <span style={{ color: '#FFFFFF', fontSize: '0.8rem', fontWeight: 700 }}>
+                  Toyota Innova Hycross • Executive Chauffeur
+                </span>
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#00C896', display: 'inline-block', boxShadow: '0 0 6px #00C896' }} />
+                <span style={{ color: '#00E5FF', fontSize: '0.74rem', fontWeight: 700 }}>
+                  {livePings} Live Telematics Pings
+                </span>
               </div>
             </div>
-
-            {/* Floating Telematics Widget 2: Bottom Right */}
-            <div className="glass-panel animate-float-delayed" style={{
-              position: 'absolute',
-              bottom: '-25px',
-              right: '-15px',
-              padding: '0.85rem 1.25rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.85rem',
-              borderRadius: '14px',
-              border: '1px solid rgba(96, 165, 250, 0.35)',
-              boxShadow: '0 15px 35px rgba(0, 0, 0, 0.5)'
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #113D89, #081B3A)',
-                border: '1px solid #60A5FA',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#60A5FA'
-              }}>
-                <Zap size={22} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: '#94A3B8', fontWeight: 600 }}>ON-TIME PERFORMANCE</div>
-                <div style={{ fontSize: '1.05rem', color: '#FFD700', fontWeight: 800 }}>99.8% SLA Guaranteed</div>
-              </div>
-            </div>
-
-          </div>
+          </motion.div>
 
         </div>
 
-        {/* Real-time Statistics Bar */}
+        {/* Phase 1 Stats Band: 2012→2021, 112+ hubs, 3 Major Hubs, 100% Certified */}
         <div style={{
-          marginTop: '4.5rem',
+          marginTop: '5rem',
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1.25rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1.5rem',
+          position: 'relative'
         }}>
-          {HERO_STATS.map((stat, idx) => (
-            <div
-              key={idx}
-              className="glass-card"
-              style={{
-                padding: '1.5rem',
-                textAlign: 'center',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              <div style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: '2.5rem',
-                fontWeight: 900,
-                color: '#FFD700',
-                lineHeight: 1,
-                marginBottom: '0.4rem',
-                textShadow: '0 0 20px rgba(255, 215, 0, 0.4)'
-              }}>
-                {stat.value}
-              </div>
-              <div style={{
-                fontWeight: 700,
-                color: '#FFFFFF',
-                fontSize: '1rem',
-                marginBottom: '0.2rem'
-              }}>
-                {stat.label}
-              </div>
-              <div style={{
-                fontSize: '0.8rem',
-                color: '#94A3B8'
-              }}>
-                {stat.sub}
-              </div>
-            </div>
-          ))}
+          {STATS_BAND.map((item, idx) => {
+            const IconComponent = item.icon;
+            return (
+              <motion.div
+                key={idx}
+                className="glass-card card-gold-hairline"
+                style={{
+                  padding: '2rem 1.75rem',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  background: 'rgba(15, 23, 42, 0.65)'
+                }}
+                whileHover={{ y: -5 }}
+                transition={{ duration: 0.25 }}
+              >
+                {/* Header row with icon and pill */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                  <div style={{
+                    width: '46px',
+                    height: '46px',
+                    borderRadius: '12px',
+                    background: 'rgba(0, 200, 150, 0.08)',
+                    border: '1px solid rgba(0, 200, 150, 0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#00C896'
+                  }}>
+                    <IconComponent size={22} />
+                  </div>
+
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.06em',
+                    color: '#D4AF37',
+                    textTransform: 'uppercase',
+                    background: 'rgba(212, 175, 55, 0.08)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '6px',
+                    border: '1px solid rgba(212, 175, 55, 0.25)'
+                  }}>
+                    {item.badge}
+                  </span>
+                </div>
+
+                {/* Big Space Grotesk tabular data number */}
+                <div className="font-mono" style={{
+                  fontSize: 'clamp(2rem, 3.2vw, 2.75rem)',
+                  fontWeight: 700,
+                  color: '#F8FAFC',
+                  lineHeight: 1.1,
+                  marginBottom: '0.5rem',
+                  letterSpacing: '-0.03em'
+                }}>
+                  {item.stat}
+                </div>
+
+                {/* Primary Metric Label */}
+                <div style={{
+                  fontWeight: 700,
+                  color: '#00C896',
+                  fontSize: '1rem',
+                  marginBottom: '0.35rem',
+                  letterSpacing: '-0.01em'
+                }}>
+                  {item.label}
+                </div>
+
+                {/* Subtext description */}
+                <div style={{
+                  fontSize: '0.84rem',
+                  color: '#94A3B8',
+                  lineHeight: 1.5
+                }}>
+                  {item.sub}
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
 
       </div>

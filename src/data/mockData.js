@@ -59,31 +59,36 @@ export const TIMELINE_MILESTONES = [
     year: "2012",
     title: "The Genesis in Pune",
     description: "Started operations with an initial fleet of 15 premium cabs serving leading IT software parks in Hinjawadi & Magarpatta, Pune.",
-    badge: "Inception"
+    badge: "Inception",
+    metric: "15+ Fleet Assets"
   },
   {
     year: "2016",
     title: "Expansion to Mumbai & Western India",
     description: "Expanded into Mumbai BKC and industrial belts, scaling to 120+ vehicles and introducing dedicated luxury bus charters for tech MNCs.",
-    badge: "Scale Up"
+    badge: "Scale Up",
+    metric: "120+ Corporate Cabs"
   },
   {
     year: "2021",
     title: "Incorporated as Private Limited",
     description: "Officially incorporated as Parveen Fleets Pvt Ltd. Established dedicated regional command centers in Delhi NCR and Hyderabad.",
-    badge: "Pvt Ltd Milestone"
+    badge: "Pvt Ltd Milestone",
+    metric: "4 Strategic Command Centers"
   },
   {
     year: "2024",
     title: "Award of the Year & IoT Telematics",
     description: "Honored as 'Best Corporate Car Rental Of The Year 2024'. Rolled out in-house AI routing engine and automated telematics safety suite.",
-    badge: "Award Winner"
+    badge: "Award Winner",
+    metric: "1st National IBSEA Honor"
   },
   {
     year: "2026",
     title: "112+ Locations PAN India Enterprise",
     description: "Operating across 12+ states, powering sustainable hybrid & EV fleets for Fortune 500 enterprises with guaranteed 99.8% on-time SLA.",
-    badge: "Enterprise Standard"
+    badge: "Enterprise Standard",
+    metric: "112+ Pan-India Hubs"
   }
 ];
 

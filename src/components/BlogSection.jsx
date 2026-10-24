@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { BookOpen, Clock, Calendar, User, ArrowRight, Sparkles } from 'lucide-react';
 import { INITIAL_BLOGS } from '../data/mockData';
 
@@ -12,23 +13,35 @@ export default function BlogSection({ onReadBlog }) {
     : INITIAL_BLOGS.filter(b => b.category === selectedCategory);
 
   return (
-    <section id="blog" className="section-padding" style={{ position: 'relative' }}>
+    <section id="blog" className="section-padding bg-obsidian mesh-grid" style={{ position: 'relative' }}>
       
-      {/* Background Ambient Glow */}
-      <div className="ambient-glow ambient-gold" style={{ width: '450px', height: '450px', top: '15%', left: '-5%' }} />
+      {/* Background Soft Emerald Glow */}
+      <div 
+        style={{ 
+          position: 'absolute',
+          width: '650px', 
+          height: '650px', 
+          top: '15%', 
+          left: '-5%',
+          background: 'radial-gradient(circle, rgba(0, 200, 150, 0.14) 0%, transparent 70%)',
+          filter: 'blur(130px)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} 
+      />
 
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         
         {/* Section Header */}
         <div style={{ textAlign: 'center', maxWidth: '820px', margin: '0 auto 3rem auto' }}>
-          <div className="pill-gold" style={{ marginBottom: '1rem' }}>
+          <div className="pill-emerald" style={{ marginBottom: '1rem' }}>
             <BookOpen size={14} />
             <span>Enterprise Knowledge Hub</span>
           </div>
-          <h2 style={{ fontSize: 'clamp(2rem, 3.5vw, 3rem)', marginBottom: '1.25rem' }}>
-            Mobility Insights, <span className="text-gradient-gold">Trends & Best Practices</span>
+          <h2 style={{ fontSize: 'clamp(2.2rem, 3.8vw, 3.4rem)', marginBottom: '1.25rem' }}>
+            Mobility Insights, <span className="text-gradient-emerald">Trends & Best Practices</span>
           </h2>
-          <p style={{ fontSize: '1.1rem', color: '#94A3B8', lineHeight: 1.6 }}>
+          <p style={{ fontSize: '1.1rem', color: '#94A3B8', lineHeight: 1.75 }}>
             Stay ahead with thought leadership articles on fleet electrification, corporate safety standards, telematics optimization, and executive travel protocols.
           </p>
         </div>
@@ -46,15 +59,16 @@ export default function BlogSection({ onReadBlog }) {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               style={{
-                background: selectedCategory === cat ? 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)' : 'rgba(205, 225, 248, 0.08)',
-                color: selectedCategory === cat ? '#050A12' : '#CBD5E1',
-                border: '1px solid ' + (selectedCategory === cat ? '#FFD700' : 'rgba(255, 255, 255, 0.1)'),
-                padding: '0.55rem 1.25rem',
+                background: selectedCategory === cat ? 'var(--emerald-gradient)' : 'rgba(15, 23, 42, 0.6)',
+                color: selectedCategory === cat ? '#05080F' : '#94A3B8',
+                border: '1px solid ' + (selectedCategory === cat ? '#00C896' : 'rgba(255, 255, 255, 0.08)'),
+                padding: '0.6rem 1.35rem',
                 borderRadius: '9999px',
                 fontWeight: 700,
-                fontSize: '0.82rem',
+                fontSize: '0.84rem',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                boxShadow: selectedCategory === cat ? '0 0 20px rgba(0, 200, 150, 0.35)' : 'none',
+                transition: 'all 0.25s ease'
               }}
             >
               {cat}
@@ -62,99 +76,121 @@ export default function BlogSection({ onReadBlog }) {
           ))}
         </div>
 
-        {/* Blogs Grid */}
+        {/* Blog Cards Grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '1.75rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '2rem'
         }}>
-          {filteredBlogs.map((blog) => (
-            <div
+          {filteredBlogs.map((blog, idx) => (
+            <motion.div
               key={blog.id}
-              className="glass-card"
+              className="glass-card card-gold-hairline group"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.45, delay: idx * 0.06 }}
+              whileHover={{ y: -6 }}
               style={{
-                padding: '2rem 1.75rem',
+                borderRadius: '22px',
+                overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                border: '1px solid rgba(255, 255, 255, 0.08)'
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(15, 23, 42, 0.65)'
               }}
             >
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <span style={{
-                    background: 'rgba(255, 215, 0, 0.12)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    color: '#FFD700',
-                    padding: '0.25rem 0.65rem',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase'
+                {/* Blog Image Frame */}
+                <div style={{ position: 'relative', height: '220px', overflow: 'hidden', background: '#05080F' }}>
+                  <img
+                    src={blog.image}
+                    alt={blog.title}
+                    loading="lazy"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      filter: 'brightness(0.92)',
+                      transition: 'transform 0.5s ease'
+                    }}
+                    className="group-hover:scale-105"
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    left: '1rem',
+                    zIndex: 2
                   }}>
-                    {blog.category}
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: '#94A3B8' }}>
-                    <Clock size={13} /> {blog.readTime}
-                  </span>
+                    <span className="pill-emerald" style={{ padding: '0.25rem 0.75rem', fontSize: '0.72rem' }}>
+                      {blog.category}
+                    </span>
+                  </div>
+                  {/* Subtle bottom vignette */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, transparent 50%)',
+                    pointerEvents: 'none'
+                  }} />
                 </div>
 
-                <h3 style={{
-                  fontSize: '1.25rem',
-                  color: '#FFFFFF',
-                  fontWeight: 800,
-                  lineHeight: 1.4,
-                  marginBottom: '1rem'
-                }}>
-                  {blog.title}
-                </h3>
+                <div style={{ padding: '1.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.76rem', color: '#94A3B8', marginBottom: '0.85rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Calendar size={13} color="#00C896" /> {blog.date}
+                    </span>
+                    <span>•</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Clock size={13} color="#D4AF37" /> {blog.readTime}
+                    </span>
+                  </div>
 
-                <p style={{
-                  fontSize: '0.9rem',
-                  color: '#94A3B8',
-                  lineHeight: 1.6,
-                  marginBottom: '1.5rem'
-                }}>
-                  {blog.summary}
-                </p>
+                  <h3 style={{ fontSize: '1.22rem', color: '#FFFFFF', fontWeight: 800, marginBottom: '0.75rem', lineHeight: 1.35 }}>
+                    {blog.title}
+                  </h3>
+
+                  <p style={{ fontSize: '0.88rem', color: '#94A3B8', lineHeight: 1.65, marginBottom: '1.5rem' }}>
+                    {blog.excerpt}
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '0.8rem',
-                  color: '#64748B',
-                  marginBottom: '1.25rem',
-                  paddingTop: '1rem',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.06)'
-                }}>
-                  <span>{blog.author}</span>
-                  <span>{blog.date}</span>
-                </div>
+              <div style={{
+                padding: '1.25rem 1.75rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(5, 8, 15, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <span style={{ fontSize: '0.8rem', color: '#CBD5E1', fontWeight: 600 }}>
+                  By {blog.author}
+                </span>
 
                 <button
                   onClick={() => onReadBlog(blog)}
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: '#FFD700',
+                    color: '#00C896',
                     fontWeight: 700,
-                    fontSize: '0.88rem',
-                    display: 'inline-flex',
+                    fontSize: '0.86rem',
+                    display: 'flex',
                     alignItems: 'center',
                     gap: '0.4rem',
-                    padding: 0,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
                   }}
+                  className="hover-gold"
                 >
                   <span>Read Article</span>
                   <ArrowRight size={15} />
                 </button>
               </div>
-
-            </div>
+            </motion.div>
           ))}
         </div>
 

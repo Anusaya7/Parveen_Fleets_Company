@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .vercel
+scratch/
 .env
 .env.*
 !.env.example
@@ -29,3 +30,5 @@ npm-debug.log*
 *.sw?
 
 .vercel
+public/images/pdf_extracted/
+

@@ -73,7 +73,7 @@ export default function App() {
 
   // Public Enterprise Website
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div className="bg-obsidian mesh-grid" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       
       {/* 1. Master Navbar */}
       <Navbar
