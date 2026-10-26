@@ -4,6 +4,7 @@ import { saveUploadedFile } from '../../../lib/media';
 import { connectStore } from '../../../lib/store';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const ALLOWED = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm|ogg|quicktime))$/i;

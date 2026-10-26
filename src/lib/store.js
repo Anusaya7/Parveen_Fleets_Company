@@ -61,10 +61,19 @@ function toEnquiry(doc) {
 
 async function connectMongo(uri) {
   if (mongoose.connection.readyState >= 1) return;
-  if (!globalThis.__parveenMongo) {
-    globalThis.__parveenMongo = mongoose.connect(uri);
+  try {
+    if (!globalThis.__parveenMongo) {
+      globalThis.__parveenMongo = mongoose.connect(uri, {
+        bufferCommands: false,
+        maxPoolSize: 5,
+        serverSelectionTimeoutMS: 8000
+      });
+    }
+    await globalThis.__parveenMongo;
+  } catch (error) {
+    globalThis.__parveenMongo = undefined;
+    throw error;
   }
-  await globalThis.__parveenMongo;
 }
 
 export async function connectStore() {
@@ -72,22 +81,29 @@ export async function connectStore() {
   const uri = process.env.MONGODB_URI?.trim();
   if (!uri) return false;
 
-  await connectMongo(uri);
-  memory.usingMongo = true;
+  try {
+    await connectMongo(uri);
+    memory.usingMongo = true;
 
-  if (!memory.seeded) {
-    const existingContent = await SiteContent.findOne({ key: 'website' });
-    if (!existingContent) {
-      await SiteContent.create({ key: 'website', data: buildDefaultContent() });
+    if (!memory.seeded) {
+      await SiteContent.findOneAndUpdate(
+        { key: 'website' },
+        { $setOnInsert: { data: buildDefaultContent() } },
+        { upsert: true, new: true }
+      );
+      const enquiryCount = await Enquiry.countDocuments();
+      if (enquiryCount === 0) {
+        await Enquiry.insertMany(buildSeedEnquiries());
+      }
+      memory.seeded = true;
     }
-    const enquiryCount = await Enquiry.countDocuments();
-    if (enquiryCount === 0) {
-      await Enquiry.insertMany(buildSeedEnquiries());
-    }
-    memory.seeded = true;
+
+    return true;
+  } catch (error) {
+    console.error('MongoDB connection failed:', error);
+    memory.usingMongo = false;
+    return false;
   }
-
-  return true;
 }
 
 export async function listEnquiries() {

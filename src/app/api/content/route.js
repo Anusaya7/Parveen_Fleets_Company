@@ -3,6 +3,7 @@ import { getAuthUser, unauthorized } from '../../../lib/auth';
 import { connectStore, getContent, getStorageMode, saveContent } from '../../../lib/store';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   await connectStore();

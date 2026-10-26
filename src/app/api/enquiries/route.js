@@ -3,6 +3,7 @@ import { getAuthUser, unauthorized } from '../../../lib/auth';
 import { connectStore, createEnquiry, getStorageMode, listEnquiries } from '../../../lib/store';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   await connectStore();

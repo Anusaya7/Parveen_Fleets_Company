@@ -3,6 +3,7 @@ import { getAuthUser, unauthorized } from '../../../../lib/auth';
 import { connectStore, deleteEnquiry, updateEnquiry } from '../../../../lib/store';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function PATCH(request, { params }) {
   await connectStore();

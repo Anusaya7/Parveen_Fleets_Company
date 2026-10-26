@@ -21,15 +21,20 @@ async function request(path, options = {}) {
   const token = getAdminToken();
   if (token && options.auth !== false) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined
+    });
+  } catch {
+    throw new Error('Could not reach the server. Please try again.');
+  }
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || 'Request failed. Please try again.');
+    throw new Error(payload.message || `Request failed (${response.status}). Please try again.`);
   }
   return payload;
 }
