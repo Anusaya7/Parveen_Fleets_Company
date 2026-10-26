@@ -1,15 +1,19 @@
 import React from 'react';
 import { MapPin, Car, Radio, ShieldCheck } from 'lucide-react';
 import { HERO_STATS } from '../data/mockData';
+import { useSiteContent } from '../context/SiteContentContext';
 
 const icons = [MapPin, Car, Radio, ShieldCheck];
 
 export default function StatsSection() {
+  const { content } = useSiteContent();
+  const stats = content.stats?.length ? content.stats : HERO_STATS;
+
   return (
     <section className="stats-section" aria-label="Parveen Fleets key figures">
       <div className="container">
         <div className="stats-grid">
-          {HERO_STATS.map((stat, index) => {
+          {stats.map((stat, index) => {
             const Icon = icons[index] || MapPin;
             return (
               <article key={stat.label} className="stat-card">

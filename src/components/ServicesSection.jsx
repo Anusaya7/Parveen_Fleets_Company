@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Users, Car, Crown, PlaneTakeoff, BusFront, CalendarClock, ShieldAlert, Compass, ArrowRight, CheckCircle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SERVICES_DATA } from '../data/mockData';
+import { useSiteContent } from '../context/SiteContentContext';
 
 const iconMap = {
   Users,
@@ -26,6 +27,8 @@ export default function ServicesSection({ onSelectService }) {
   const [visibleCount, setVisibleCount] = useState(3);
   const [paused, setPaused] = useState(false);
   const viewportRef = useRef(null);
+  const { content } = useSiteContent();
+  const catalog = content.services?.length ? content.services : SERVICES_DATA;
   const filters = [
     { id: 'all', label: 'All services' },
     { id: 'commute', label: 'Employee commute' },
@@ -38,8 +41,8 @@ export default function ServicesSection({ onSelectService }) {
     group: ['bus-coach-rentals', 'tourism-solutions']
   };
   const visibleServices = activeFilter === 'all'
-    ? SERVICES_DATA
-    : SERVICES_DATA.filter((service) => serviceGroups[activeFilter].includes(service.id));
+    ? catalog
+    : catalog.filter((service) => serviceGroups[activeFilter]?.includes(service.id));
   const maxIndex = Math.max(0, visibleServices.length - visibleCount);
 
   const scrollToIndex = (nextIndex) => {
@@ -158,6 +161,11 @@ export default function ServicesSection({ onSelectService }) {
                   key={service.id}
                   className={`service-card ${service.popular ? 'is-featured' : ''}`}
                 >
+                  {service.image ? (
+                    <div className="service-card-media">
+                      <img src={service.image} alt={service.title} />
+                    </div>
+                  ) : null}
                   <div className="service-card-top">
                     <div className="service-card-icon">
                       <IconComponent size={22} />
@@ -174,7 +182,7 @@ export default function ServicesSection({ onSelectService }) {
                   <p>{service.description}</p>
 
                   <ul className="service-features">
-                    {service.features.map((feat) => (
+                    {(service.features || []).map((feat) => (
                       <li key={feat}>
                         <CheckCircle size={15} />
                         <span>{feat}</span>

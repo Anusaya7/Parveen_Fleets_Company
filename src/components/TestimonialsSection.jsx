@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Quote, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { TESTIMONIALS_DATA } from '../data/mockData';
+import { useSiteContent } from '../context/SiteContentContext';
 
 export default function TestimonialsSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { content } = useSiteContent();
+  const testimonials = content.testimonials?.length ? content.testimonials : TESTIMONIALS_DATA;
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS_DATA.length);
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [testimonials.length]);
 
   const handlePrev = () => {
-    setCurrentIndex((prev) => (prev === 0 ? TESTIMONIALS_DATA.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? testimonials.length - 1 : prev - 1));
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS_DATA.length);
+    setCurrentIndex((prev) => (prev + 1) % testimonials.length);
   };
 
-  const current = TESTIMONIALS_DATA[currentIndex];
+  const current = testimonials[currentIndex] || testimonials[0];
 
   return (
     <section className="testimonials-section section-padding">

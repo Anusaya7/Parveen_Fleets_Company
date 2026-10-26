@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { BookOpen, Clock, ArrowRight } from 'lucide-react';
 import { INITIAL_BLOGS } from '../data/mockData';
+import { useSiteContent } from '../context/SiteContentContext';
 
 export default function BlogSection({ onReadBlog }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const { content } = useSiteContent();
+  const blogs = content.blogs?.length ? content.blogs : INITIAL_BLOGS;
 
   const categories = ['All', 'Corporate Transport', 'Employee Safety', 'Fleet Management', 'Travel', 'Tourism'];
 
   const filteredBlogs = selectedCategory === 'All'
-    ? INITIAL_BLOGS
-    : INITIAL_BLOGS.filter((blog) => blog.category === selectedCategory);
+    ? blogs
+    : blogs.filter((blog) => blog.category === selectedCategory);
 
   return (
     <section id="blog" className="blog-section section-padding">

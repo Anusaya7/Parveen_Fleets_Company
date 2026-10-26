@@ -1,35 +1,59 @@
-import React, { useEffect, useState } from 'react';
-import { Phone, ArrowRight, ShieldCheck, Zap, Car, ChevronLeft, ChevronRight } from 'lucide-react';
+'use client';
 
-const HERO_SLIDES = [
-  {
-    image: '/images/fleet_luxury_suv.jpg',
-    kicker: 'CXO & VIP travel',
-    caption: 'Luxury SUVs for board meetings and delegations'
-  },
-  {
-    image: '/images/hero_fleet.jpg',
-    kicker: 'Enterprise grade mobility',
-    caption: 'Toyota Hycross • Mercedes S-Class • Volvo Coaches'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1485291571150-772bcfc10da5?auto=format&fit=crop&w=1920&q=80',
-    kicker: 'Chauffeur-driven executive cars',
-    caption: 'Mercedes, BMW and Audi protocol fleets'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1544620341-11cb2cd57c62?auto=format&fit=crop&w=1920&q=80',
-    kicker: 'Group & campus transport',
-    caption: 'Luxury coaches and employee shuttle operations'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1920&q=80',
-    kicker: 'PAN India coverage',
-    caption: '112+ hubs with live GPS and 24×7 command support'
+import React, { useEffect, useRef, useState } from 'react';
+import { Phone, ArrowRight, ShieldCheck, Zap, Car, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSiteContent } from '../context/SiteContentContext';
+import { DEFAULT_HERO_SLIDES } from '../lib/defaultContent';
+
+function buildHeroSlides(hero = {}) {
+  if (hero.sliderMode === 'video') {
+    const videos = (hero.videos || [])
+      .map((item) => (typeof item === 'string' ? item : item?.video))
+      .filter(Boolean)
+      .map((video) => ({ type: 'video', video }));
+    if (hero.videoUrl && !videos.some((item) => item.video === hero.videoUrl)) {
+      videos.unshift({ type: 'video', video: hero.videoUrl });
+    }
+    if (videos.length) return videos;
   }
-];
+
+  return (hero.slides?.length ? hero.slides : DEFAULT_HERO_SLIDES)
+    .map((slide) => ({ type: 'image', image: slide.image || '' }))
+    .filter((slide) => slide.image);
+}
+
+function HeroVideo({ src, active }) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+    if (active) {
+      node.play().catch(() => {});
+    } else {
+      node.pause();
+    }
+    return undefined;
+  }, [active, src]);
+
+  return (
+    <video
+      ref={ref}
+      className="hero-slide-video"
+      src={src}
+      muted
+      loop
+      playsInline
+      autoPlay={active}
+    />
+  );
+}
 
 export default function HeroSection({ onOpenQuote, onBookFleet }) {
+  const { content } = useSiteContent();
+  const hero = content.hero || {};
+  const slides = buildHeroSlides(hero);
+  const phone = content.company?.phones?.[0] || '+91 95458 99838';
   const [quickService, setQuickService] = useState('Employee Transportation');
   const [quickCity, setQuickCity] = useState('Pune');
   const [quickPassengers, setQuickPassengers] = useState('10 - 50 Employees');
@@ -48,16 +72,27 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
     return () => window.removeEventListener('resize', setHeaderOffset);
   }, []);
 
+  const activeSlide = slides[slideIndex] || slides[0] || {};
+  const activeIsVideo = activeSlide.type === 'video' || Boolean(activeSlide.video);
+
   useEffect(() => {
-    if (paused) return undefined;
+    if (slideIndex >= slides.length) setSlideIndex(0);
+  }, [slideIndex, slides.length]);
+
+  useEffect(() => {
+    setSlideIndex(0);
+  }, [hero.sliderMode]);
+
+  useEffect(() => {
+    if (paused || slides.length < 2) return undefined;
     const timer = window.setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % HERO_SLIDES.length);
-    }, 5500);
+      setSlideIndex((prev) => (prev + 1) % slides.length);
+    }, activeIsVideo ? 10000 : 5500);
     return () => window.clearInterval(timer);
-  }, [paused]);
+  }, [paused, activeIsVideo, slides.length]);
 
   const goTo = (index) => {
-    setSlideIndex((index + HERO_SLIDES.length) % HERO_SLIDES.length);
+    setSlideIndex((index + slides.length) % Math.max(slides.length, 1));
   };
 
   const handleQuickEstimate = (e) => {
@@ -69,8 +104,6 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
     });
   };
 
-  const activeSlide = HERO_SLIDES[slideIndex];
-
   return (
     <section
       id="home"
@@ -79,26 +112,32 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
       onMouseLeave={() => setPaused(false)}
     >
       <div className="hero-slider" aria-hidden="true">
-        {HERO_SLIDES.map((slide, index) => (
-          <div
-            key={slide.image}
-            className={`hero-slide ${index === slideIndex ? 'is-active' : ''}`}
-            style={{ backgroundImage: `url(${slide.image})` }}
-          />
-        ))}
+        {slides.map((slide, index) => {
+          const isVideo = slide.type === 'video' || Boolean(slide.video);
+          const media = slide.video || slide.image;
+          return (
+            <div
+              key={`${media}-${index}`}
+              className={`hero-slide ${index === slideIndex ? 'is-active' : ''}`}
+              style={isVideo ? undefined : { backgroundImage: `url(${media})` }}
+            >
+              {isVideo ? <HeroVideo src={media} active={index === slideIndex} /> : null}
+            </div>
+          );
+        })}
       </div>
       <div className="hero-slider-overlay" aria-hidden="true" />
 
       <div className="container hero-inner">
         <div className="hero-copy">
           <h1>
-            India's Most Trusted
+            {hero.title || "India's Most Trusted"}
             <br />
-            <span className="text-gradient-gold">Corporate Transportation Partner</span>
+            <span className="text-gradient-gold">{hero.highlight || 'Corporate Transportation Partner'}</span>
           </h1>
 
           <p className="hero-tagline">
-            Redefining Travel with Safety, Comfort and Innovation
+            {hero.tagline || 'Redefining Travel with Safety, Comfort and Innovation'}
           </p>
 
           <div className="hero-actions">
@@ -110,7 +149,7 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
               <Car size={18} />
               <span>Book Fleet</span>
             </button>
-            <a href="tel:+919545899838" className="btn-outline">
+            <a href={`tel:${String(phone).replace(/[^\d+]/g, '')}`} className="btn-outline">
               <Phone size={17} />
               <span>Call Now</span>
             </a>
@@ -160,8 +199,8 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
           <div className="hero-live-badge">
             <span /> Live GPS Active
           </div>
-          <div className="hero-slide-kicker">{activeSlide.kicker}</div>
-          <div className="hero-slide-caption">{activeSlide.caption}</div>
+          <div className="hero-slide-kicker">{hero.highlight || 'Corporate Transportation Partner'}</div>
+          <div className="hero-slide-caption">{hero.tagline || 'Redefining Travel with Safety, Comfort and Innovation'}</div>
           <div className="hero-float-row">
             <div className="hero-float-item">
               <ShieldCheck size={18} />
@@ -186,9 +225,9 @@ export default function HeroSection({ onOpenQuote, onBookFleet }) {
           <ChevronLeft size={20} />
         </button>
         <div className="hero-dots" role="tablist" aria-label="Hero slides">
-          {HERO_SLIDES.map((slide, index) => (
+          {slides.map((slide, index) => (
             <button
-              key={slide.kicker}
+              key={`${slide.image || slide.video || 'slide'}-${index}`}
               type="button"
               role="tab"
               aria-selected={index === slideIndex}

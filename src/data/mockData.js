@@ -99,6 +99,7 @@ export const SERVICES_DATA = [
     tagline: "Automated Daily Corporate Commute",
     description: "Turnkey pickup and drop logistics for corporate workforce with dynamic roster scheduling, geo-fenced route optimization, and live safety escort tracking.",
     icon: "Users",
+    image: "/images/fleet/mini-bus.jpg",
     features: ["Dynamic Roster Optimization", "Strict On-Time Arrival SLA", "Real-Time Geo-Tracking", "Escort Guards for Night Shifts"],
     popular: true
   },
@@ -108,6 +109,7 @@ export const SERVICES_DATA = [
     tagline: "Dedicated On-Demand & Spot Executive Cabs",
     description: "Premium sedan and SUV spot rentals for leadership meetings, client visits, inter-office transit, and ad-hoc corporate requirements with unified billing.",
     icon: "Car",
+    image: "/images/fleet/ciaz.jpg",
     features: ["Instant Booking Portal", "Clean Chauffeur Uniforms", "Bottled Water & Wi-Fi", "Zero Surge Pricing Guarantee"],
     popular: false
   },
@@ -117,6 +119,7 @@ export const SERVICES_DATA = [
     tagline: "Mercedes, BMW, Audi & Fortuner for CXOs",
     description: "Bespoke executive mobility for board members, global delegations, and VIP guests with high-end luxury sedans and premium SUVs driven by elite protocol chauffeurs.",
     icon: "Crown",
+    image: "/images/fleet/luxury-suv.jpg",
     features: ["Mercedes S/E-Class & BMW 5/7", "Protocol Trained Chauffeurs", "Flight Meet & Greet", "Executive Privacy Tint & Amenities"],
     popular: true
   },
@@ -126,6 +129,7 @@ export const SERVICES_DATA = [
     tagline: "Punctual Executive Flight Transfers",
     description: "Seamless door-to-terminal airport logistics with automated real-time flight tracking, delayed flight adjustments, meet-and-greet placards, and zero wait times.",
     icon: "PlaneTakeoff",
+    image: "/images/fleet/dzire.jpg",
     features: ["Automated Flight Delay Tracking", "Airport Chauffeur Meet & Greet", "Luggage Handling Assistance", "Priority Airport Toll Access"],
     popular: false
   },
@@ -135,6 +139,7 @@ export const SERVICES_DATA = [
     tagline: "Campus & Metro Hub Commuter Shuttles",
     description: "Scheduled high-capacity point-to-point AC shuttle buses connecting corporate tech parks to major metro hubs, railway stations, and central city clusters.",
     icon: "BusFront",
+    image: "/images/fleet/tempo-traveller.jpg",
     features: ["Fixed Scheduled Departures", "QR Code Pass Scanning", "High Frequency Peak Hours", "Carbon Footprint Reduction"],
     popular: false
   },
@@ -144,6 +149,7 @@ export const SERVICES_DATA = [
     tagline: "Custom Monthly & Annual Fleet Leases",
     description: "Hassle-free corporate vehicle leasing programs with dedicated vehicles, dedicated chauffeurs, fuel management, regular maintenance, and guaranteed standby replacements.",
     icon: "CalendarClock",
+    image: "/images/fleet/innova-hycross.jpg",
     features: ["Flexible 12 to 36 Month Terms", "Dedicated Chauffeur & Vehicle", "Comprehensive Maintenance & Insurance", "Immediate Standby Replacement"],
     popular: false
   },
@@ -153,6 +159,7 @@ export const SERVICES_DATA = [
     tagline: "Tempo Travellers & Luxury Volvo Coaches",
     description: "Modern 12 to 55-seater air-conditioned executive coaches and Tempo Travellers for employee shift transport, team offsites, annual corporate summits, and industrial visits.",
     icon: "ShieldAlert",
+    image: "/images/fleet/luxury-coach.jpg",
     features: ["12 to 55 Seater Capacities", "Air Suspension & Pushback Seats", "PA System & High-Speed Wi-Fi", "Highway Speed Governors Enabled"],
     popular: true
   },
@@ -162,6 +169,7 @@ export const SERVICES_DATA = [
     tagline: "MICE & Corporate Retreat Logistics",
     description: "End-to-end transportation management for high-stakes MICE conferences, global summits, shareholder meetings, corporate weekend getaways, and luxury industrial delegations.",
     icon: "Compass",
+    image: "/images/fleet/volvo-coach.jpg",
     features: ["Dedicated On-Ground Transport Marshals", "Custom Branded Fleet Wraps", "Multi-City Delegate Coordination", "24x7 Dedicated Event War-Room"],
     popular: false
   }

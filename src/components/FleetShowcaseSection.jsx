@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { Users, Briefcase, Fuel, Shield, ArrowRight, Sparkles, Check } from 'lucide-react';
 import { FLEET_SHOWCASE } from '../data/mockData';
+import { useSiteContent } from '../context/SiteContentContext';
 
 export default function FleetShowcaseSection({ onBookVehicle }) {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const { content } = useSiteContent();
+  const fleet = content.fleet?.length ? content.fleet : FLEET_SHOWCASE;
 
   const categories = ['All', 'Executive Sedans', 'Premium MPVs', 'Luxury & VIP', 'Coaches & Travellers'];
 
   const filteredFleet = selectedCategory === 'All'
-    ? FLEET_SHOWCASE
-    : FLEET_SHOWCASE.filter((item) => item.category === selectedCategory);
+    ? fleet
+    : fleet.filter((item) => item.category === selectedCategory);
 
   return (
     <section id="fleet" className="fleet-section section-padding">

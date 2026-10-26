@@ -1,1136 +1,889 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  LayoutDashboard, Users, Calendar, Car, Building2, FileText, Search,
-  Download, Plus, Trash2, Edit3, CheckCircle2, AlertCircle, Eye,
-  LogOut, Shield, ArrowLeft, TrendingUp, DollarSign, Clock, Filter,
-  Phone, Mail, MapPin, Globe, Check, X, ShieldAlert, Sparkles
+  ArrowLeft, BarChart3, BookOpen, Building2, Car, Image as ImageIcon,
+  LayoutDashboard, LogOut, Mail, Pencil, Phone, Plus, Save, Search, Shield,
+  Sparkles, Trash2, Upload, Users, Video, X
 } from 'lucide-react';
-import { INITIAL_LEADS, INITIAL_BOOKINGS, FLEET_SHOWCASE, SERVICES_DATA } from '../data/mockData';
+import { api, getAdminToken, setAdminToken } from '../api/client';
+import { useSiteContent } from '../context/SiteContentContext';
+import { DEFAULT_HERO_SLIDES } from '../lib/defaultContent';
 
-export default function AdminPortal({ onBackToWebsite, leadsList, setLeadsList }) {
-  // Authentication State
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const NAV = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'Overview' },
+  { id: 'enquiries', label: 'Enquiries', icon: Users, group: 'Overview' },
+  { id: 'hero', label: 'Hero & Media', icon: ImageIcon, group: 'Website content' },
+  { id: 'company', label: 'Company', icon: Building2, group: 'Website content' },
+  { id: 'stats', label: 'Stats', icon: BarChart3, group: 'Website content' },
+  { id: 'services', label: 'Services', icon: Sparkles, group: 'Website content' },
+  { id: 'fleet', label: 'Fleet', icon: Car, group: 'Website content' },
+  { id: 'blogs', label: 'Blogs', icon: BookOpen, group: 'Website content' },
+  { id: 'seo', label: 'SEO', icon: Search, group: 'Website content' }
+];
+
+function Field({ label, value, onChange, type = 'text', rows }) {
+  const Tag = rows ? 'textarea' : 'input';
+  return (
+    <label className="admin-field">
+      <span>{label}</span>
+      <Tag
+        className="pf-input"
+        type={rows ? undefined : type}
+        rows={rows}
+        value={value || ''}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </label>
+  );
+}
+
+function MediaField({ label, accept, value, onUploaded, kind = 'image' }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setBusy(true);
+    setError('');
+    try {
+      const saved = await api.upload(file);
+      onUploaded(saved.url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="admin-media-field">
+      {label ? <span>{label}</span> : null}
+      {value ? (
+        kind === 'video' ? (
+          <video src={value} className="admin-media-preview" muted controls />
+        ) : (
+          <img src={value} alt="" className="admin-media-preview" />
+        )
+      ) : null}
+      <label className="admin-upload-btn">
+        <Upload size={14} />
+        {busy ? 'Uploading...' : `Upload ${kind}`}
+        <input type="file" accept={accept} onChange={handleFile} hidden disabled={busy} />
+      </label>
+      {error ? <em className="admin-error">{error}</em> : null}
+    </div>
+  );
+}
+
+function PageHead({ kicker, title, text, action }) {
+  return (
+    <div className="admin-content-head">
+      <div>
+        {kicker ? <p className="admin-kicker">{kicker}</p> : null}
+        <h2>{title}</h2>
+        <p>{text}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function DataTable({ columns, children }) {
+  return (
+    <div className="admin-card">
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              {columns.map((column) => (
+                <th key={column}>{column}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>{children}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function RowActions({ onEdit, onDelete }) {
+  return (
+    <td className="admin-row-actions">
+      <button type="button" className="btn-outline" onClick={onEdit}>
+        <Pencil size={14} /> Edit
+      </button>
+      {onDelete ? (
+        <button type="button" className="admin-icon-btn" onClick={onDelete}>
+          <Trash2 size={15} />
+        </button>
+      ) : null}
+    </td>
+  );
+}
+
+function NameCell({ image, title, video }) {
+  return (
+    <div className="admin-name-cell">
+      {image ? <img src={image} alt="" /> : video ? <video src={video} muted /> : <span className="admin-thumb-empty" />}
+      <strong>{title}</strong>
+    </div>
+  );
+}
+
+export default function AdminPortal({ onBackToWebsite }) {
+  const { content, refreshContent, storage } = useSiteContent();
+  const [token, setToken] = useState('');
+  const [email, setEmail] = useState('admin@parveenfleets.in');
+  const [password, setPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
-  const [currentRole, setCurrentRole] = useState('Admin'); // Admin, Manager, Operations, Sales, Support
-  const [activeSection, setActiveSection] = useState('dashboard'); // dashboard, leads, bookings, fleet, clients, cms, seo
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [section, setSection] = useState('dashboard');
+  const [enquiries, setEnquiries] = useState([]);
+  const [draft, setDraft] = useState(content);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [editor, setEditor] = useState(null);
 
-  // Filter & Search states
-  const [leadSearch, setLeadSearch] = useState('');
-  const [leadStatusFilter, setLeadStatusFilter] = useState('All');
-  const [selectedLead, setSelectedLead] = useState(null);
-  const [isEditingLead, setIsEditingLead] = useState(false);
+  useEffect(() => {
+    setToken(getAdminToken());
+  }, []);
 
-  // Bookings state
-  const [bookingsList, setBookingsList] = useState(INITIAL_BOOKINGS);
-  const [bookingFilter, setBookingFilter] = useState('All');
-
-  // Vehicles state
-  const [vehiclesList, setVehiclesList] = useState(FLEET_SHOWCASE);
-  const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
-  const [newVehicle, setNewVehicle] = useState({
-    name: '',
-    category: 'Executive Sedans',
-    capacity: '4 Passengers',
-    fuel: 'Petrol / Hybrid',
-    rateEstimate: '₹2,000 / 8 Hrs',
-    badge: 'Available'
-  });
-
-  // Clients state
-  const [clientsList, setClientsList] = useState([
-    { id: 1, name: 'Infosys Technologies', city: 'Pune & Hyderabad', fleetSize: '65 Cabs', contract: '₹18.5 L / mo', status: 'Active' },
-    { id: 2, name: 'Tata Motors', city: 'Pune & Mumbai', fleetSize: '45 Cabs', contract: '₹14.2 L / mo', status: 'Active' },
-    { id: 3, name: 'Wipro Enterprises', city: 'Delhi NCR', fleetSize: '30 Cabs', contract: '₹9.8 L / mo', status: 'Active' },
-    { id: 4, name: 'Cognizant Solutions', city: 'Hyderabad', fleetSize: '50 Cabs', contract: '₹15.0 L / mo', status: 'Active' }
-  ]);
-
-  // SEO state
-  const [seoConfig, setSeoConfig] = useState({
-    metaTitle: "Parveen Fleets Pvt Ltd | India's Most Trusted Corporate Transportation Partner",
-    metaDesc: "Technology-driven employee transportation, cab rentals, bus rentals, airport transfers across India.",
-    keywords: "corporate transportation, employee transport, cab rentals Pune, bus rental India, Parveen Fleets",
-    canonicalUrl: "https://www.parveenfleets.in",
-    robots: "index, follow"
-  });
-  const [seoSaved, setSeoSaved] = useState(false);
-
-  // Export Leads to Excel (CSV format)
-  const exportLeadsToExcel = () => {
-    const headers = ['ID', 'Name', 'Company', 'Phone', 'Email', 'Service', 'City', 'Status', 'Date', 'Message'];
-    const rows = leadsList.map(lead => [
-      lead.id,
-      `"${lead.name}"`,
-      `"${lead.company}"`,
-      `"${lead.phone}"`,
-      `"${lead.email}"`,
-      `"${lead.service}"`,
-      `"${lead.city}"`,
-      `"${lead.status}"`,
-      `"${lead.date}"`,
-      `"${(lead.message || '').replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Parveen_Fleets_Leads_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Delete Lead
-  const handleDeleteLead = (id) => {
-    if (window.confirm('Are you sure you want to delete this lead?')) {
-      setLeadsList(leadsList.filter(l => l.id !== id));
-      if (selectedLead?.id === id) setSelectedLead(null);
+  useEffect(() => {
+    const next = { ...content };
+    if (!next.hero?.slides?.length) {
+      next.hero = { ...(next.hero || {}), slides: DEFAULT_HERO_SLIDES };
     }
-  };
-
-  // Update Lead Status
-  const handleUpdateLeadStatus = (id, newStatus) => {
-    setLeadsList(leadsList.map(l => l.id === id ? { ...l, status: newStatus } : l));
-    if (selectedLead?.id === id) {
-      setSelectedLead({ ...selectedLead, status: newStatus });
+    if (next.hero.sliderMode !== 'video') next.hero.sliderMode = 'image';
+    if (!Array.isArray(next.hero.videos)) {
+      next.hero.videos = next.hero.videoUrl ? [{ video: next.hero.videoUrl }] : [];
     }
+    setDraft(next);
+  }, [content]);
+
+  const loadEnquiries = async () => {
+    const payload = await api.listEnquiries();
+    setEnquiries(payload.data || []);
   };
 
-  // Update Booking Status
-  const handleUpdateBookingStatus = (id, newStatus) => {
-    setBookingsList(bookingsList.map(b => b.id === id ? { ...b, status: newStatus } : b));
-  };
-
-  // Delete Vehicle
-  const handleDeleteVehicle = (id) => {
-    if (window.confirm('Delete this vehicle from active fleet catalog?')) {
-      setVehiclesList(vehiclesList.filter(v => v.id !== id));
-    }
-  };
-
-  // Add Vehicle
-  const handleAddVehicle = (e) => {
-    e.preventDefault();
-    const newEntry = {
-      id: `v-${Date.now()}`,
-      name: newVehicle.name,
-      category: newVehicle.category,
-      capacity: newVehicle.capacity,
-      luggage: '3 Bags',
-      fuel: newVehicle.fuel,
-      features: ['Dual GPS', 'Air Conditioning', 'Chauffeur Driven', 'Verified'],
-      rateEstimate: newVehicle.rateEstimate,
-      image: '/images/fleet_luxury_suv.jpg',
-      badge: newVehicle.badge
+  useEffect(() => {
+    if (!editor) return undefined;
+    const html = document.documentElement;
+    html.classList.add('admin-popup-open');
+    document.body.classList.add('admin-popup-open');
+    return () => {
+      html.classList.remove('admin-popup-open');
+      document.body.classList.remove('admin-popup-open');
     };
-    setVehiclesList([...vehiclesList, newEntry]);
-    setShowAddVehicleModal(false);
-    setNewVehicle({
-      name: '',
-      category: 'Executive Sedans',
-      capacity: '4 Passengers',
-      fuel: 'Petrol / Hybrid',
-      rateEstimate: '₹2,000 / 8 Hrs',
-      badge: 'Available'
-    });
+  }, [editor]);
+
+  useEffect(() => {
+    if (!token) return undefined;
+    loadEnquiries().catch((error) => setNotice(error.message));
+    const timer = window.setInterval(() => {
+      loadEnquiries().catch(() => {});
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, [token]);
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+    setLoggingIn(true);
+    setLoginMessage('');
+    try {
+      const payload = await api.login(email, password);
+      setAdminToken(payload.token);
+      setToken(payload.token);
+      await loadEnquiries();
+    } catch (error) {
+      setLoginMessage(error.message);
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
-  // Filtered Leads
-  const filteredLeads = leadsList.filter(l => {
-    const matchesSearch = l.name.toLowerCase().includes(leadSearch.toLowerCase()) ||
-                          l.company.toLowerCase().includes(leadSearch.toLowerCase()) ||
-                          l.city.toLowerCase().includes(leadSearch.toLowerCase()) ||
-                          l.service.toLowerCase().includes(leadSearch.toLowerCase());
-    const matchesStatus = leadStatusFilter === 'All' || l.status === leadStatusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleLogout = () => {
+    setAdminToken('');
+    setToken('');
+    setEnquiries([]);
+  };
 
-  // Filtered Bookings
-  const filteredBookings = bookingFilter === 'All'
-    ? bookingsList
-    : bookingsList.filter(b => b.status === bookingFilter);
+  const showNotice = (text) => {
+    setNotice(text);
+    window.setTimeout(() => setNotice(''), 2500);
+  };
 
-  // Beautiful Enterprise Login Page if unauthenticated
-  if (!isAuthenticated) {
+  const persistDraft = async (nextDraft, message = 'Saved to the website.') => {
+    setSaving(true);
+    try {
+      await api.saveContent(nextDraft);
+      setDraft(nextDraft);
+      await refreshContent();
+      showNotice(message);
+      return true;
+    } catch (error) {
+      showNotice(error.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEditor = (type, index, data) => {
+    setEditor({ type, index, data: { ...data } });
+  };
+
+  const updateEditor = (field, value) => {
+    setEditor((prev) => ({ ...prev, data: { ...prev.data, [field]: value } }));
+  };
+
+  const closeEditor = () => setEditor(null);
+
+  const saveEditor = async () => {
+    if (!editor) return;
+    const { type, index, data } = editor;
+
+    if (type === 'enquiry') {
+      setSaving(true);
+      try {
+        const payload = {
+          name: data.name,
+          company: data.company,
+          phone: data.phone,
+          email: data.email,
+          service: data.service,
+          city: data.city,
+          message: data.message,
+          status: data.status
+        };
+        const saved = await api.updateEnquiry(data.id, payload);
+        setEnquiries((prev) => prev.map((row) => (row.id === data.id ? { ...row, ...(saved.data || payload) } : row)));
+        showNotice('Enquiry updated.');
+        closeEditor();
+      } catch (error) {
+        showNotice(error.message);
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    let nextDraft = { ...draft };
+    if (type === 'headline') {
+      nextDraft = { ...draft, hero: { ...draft.hero, title: data.title, highlight: data.highlight, tagline: data.tagline } };
+    } else if (type === 'company') {
+      nextDraft = {
+        ...draft,
+        company: {
+          ...draft.company,
+          phones: [data.phone, draft.company?.phones?.[1] || ''],
+          emails: [data.email, draft.company?.emails?.[1] || ''],
+          headOffice: { ...draft.company?.headOffice, address: data.address }
+        }
+      };
+    } else if (type === 'seo') {
+      nextDraft = { ...draft, seo: { ...draft.seo, metaTitle: data.metaTitle, metaDesc: data.metaDesc, keywords: data.keywords } };
+    } else if (type === 'slide') {
+      const slides = [...(draft.hero?.slides || [])];
+      const saved = { type: 'image', image: data.image || '' };
+      if (index < 0) slides.push(saved);
+      else slides[index] = { ...slides[index], ...saved };
+      nextDraft = { ...draft, hero: { ...draft.hero, slides } };
+    } else if (type === 'video') {
+      const videos = [...(draft.hero?.videos || [])];
+      const saved = { video: data.video || '' };
+      if (index < 0) videos.push(saved);
+      else videos[index] = saved;
+      nextDraft = { ...draft, hero: { ...draft.hero, videos } };
+    } else if (type === 'stat') {
+      const stats = [...(draft.stats || [])];
+      const saved = { value: data.value, label: data.label, sub: data.sub };
+      if (index < 0) stats.push(saved);
+      else stats[index] = saved;
+      nextDraft = { ...draft, stats };
+    } else if (type === 'service') {
+      const services = [...(draft.services || [])];
+      const saved = {
+        ...data,
+        title: data.title || 'New Service',
+        features: String(data.featuresText || '').split('\n').map((line) => line.trim()).filter(Boolean)
+      };
+      delete saved.featuresText;
+      if (index < 0) services.push(saved);
+      else services[index] = { ...services[index], ...saved };
+      nextDraft = { ...draft, services };
+    } else if (type === 'fleet') {
+      const fleet = [...(draft.fleet || [])];
+      const saved = {
+        ...data,
+        name: data.name || 'New Vehicle',
+        features: String(data.featuresText || '').split('\n').map((line) => line.trim()).filter(Boolean)
+      };
+      delete saved.featuresText;
+      if (index < 0) fleet.push(saved);
+      else fleet[index] = { ...fleet[index], ...saved };
+      nextDraft = { ...draft, fleet };
+    } else if (type === 'blog') {
+      const blogs = [...(draft.blogs || [])];
+      const saved = { ...data, title: data.title || 'New article' };
+      if (index < 0) blogs.push(saved);
+      else blogs[index] = { ...blogs[index], ...saved };
+      nextDraft = { ...draft, blogs };
+    }
+
+    const ok = await persistDraft(nextDraft, 'Saved to the website.');
+    if (ok) closeEditor();
+  };
+
+  const deleteItem = async (label, updater) => {
+    if (!window.confirm(`Delete this ${label}?`)) return;
+    await persistDraft(updater(draft), `${label} deleted.`);
+  };
+
+  const setSliderMode = async (mode) => {
+    await persistDraft({ ...draft, hero: { ...draft.hero, sliderMode: mode } }, 'Slider type updated.');
+  };
+
+  const navGroups = NAV.reduce((groups, item) => {
+    if (!groups[item.group]) groups[item.group] = [];
+    groups[item.group].push(item);
+    return groups;
+  }, {});
+
+  if (!token) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'radial-gradient(circle at 50% 30%, rgba(17, 61, 137, 0.4) 0%, #050A12 80%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem'
-      }}>
-        <div className="glass-panel" style={{
-          width: '100%',
-          maxWidth: '460px',
-          padding: '2.5rem',
-          borderRadius: '24px',
-          border: '1.5px solid rgba(255, 215, 0, 0.4)',
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.9)'
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <img
-              src="/parveen-fleets-logo.png"
-              alt="Parveen Fleets Pvt Ltd"
-              className="brand-logo brand-logo-admin"
-              style={{ margin: '0 auto 1rem' }}
-            />
-            <h2 style={{ fontSize: '1.6rem', color: '#FFFFFF', fontWeight: 900, marginBottom: '0.25rem' }}>
-              PARVEEN FLEETS
-            </h2>
-            <div style={{ color: '#FFD700', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>
-              ENTERPRISE COMMAND SUITE
-            </div>
+      <div className="admin-login">
+        <div className="admin-login-orb admin-login-orb-gold" aria-hidden="true" />
+        <div className="admin-login-orb admin-login-orb-blue" aria-hidden="true" />
+        <form className="admin-login-card" onSubmit={handleLogin}>
+          <div className="admin-login-brand">
+            <img src="/parveen-fleets-logo.png" alt="Parveen Fleets Pvt Ltd" className="brand-logo brand-logo-admin" />
+            <span>
+              <Shield size={12} />
+              Enterprise Command Suite
+            </span>
           </div>
-
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            setLoginMessage('Secure admin authentication is not connected in this scaffold. The dashboard remains locked; configure the Laravel authentication API before deployment.');
-          }}>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                Enterprise Access Role
-              </label>
-              <select
-                value={currentRole}
-                onChange={(e) => setCurrentRole(e.target.value)}
-                className="pf-input"
-              >
-                <option value="Admin" style={{ background: '#081B3A' }}>Administrator (Full Access)</option>
-                <option value="Manager" style={{ background: '#081B3A' }}>General Manager (Operations & Approvals)</option>
-                <option value="Operations" style={{ background: '#081B3A' }}>Operations & Dispatch Controller</option>
-                <option value="Sales" style={{ background: '#081B3A' }}>Corporate Sales & Leads Manager</option>
-                <option value="Support" style={{ background: '#081B3A' }}>24x7 Support & Escalations Desk</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                Enterprise Email
-              </label>
-              <input
-                type="email"
-                required
-                className="pf-input"
-              />
-            </div>
-
-            <div style={{ marginBottom: '1.75rem' }}>
-              <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                Security Passcode
-              </label>
-              <input
-                type="password"
-                required
-                className="pf-input"
-              />
-            </div>
-
-            {loginMessage && (
-              <p role="alert" style={{ color: '#FCA5A5', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                {loginMessage}
-              </p>
-            )}
-
-            <button type="submit" className="btn-gold" style={{ width: '100%', padding: '0.9rem' }}>
-              Admin Sign-In (Not Connected)
-            </button>
-
-            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-              <button
-                type="button"
-                onClick={onBackToWebsite}
-                style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}
-              >
-                <ArrowLeft size={14} /> Return to Public Website
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="admin-login-copy">
+            <h1>Admin Sign In</h1>
+            <p>Secure access to website content, fleet data, and incoming enquiries.</p>
+          </div>
+          <Field label="Admin email" type="email" value={email} onChange={setEmail} />
+          <Field label="Security passcode" type="password" value={password} onChange={setPassword} />
+          {loginMessage ? <p className="admin-error">{loginMessage}</p> : null}
+          <button type="submit" className="btn-gold admin-login-submit" disabled={loggingIn}>
+            {loggingIn ? 'Authenticating...' : 'Enter Control Hub'}
+          </button>
+          <p className="admin-hint">admin@parveenfleets.in · ParveenAdmin@2026</p>
+          <button type="button" className="admin-link" onClick={onBackToWebsite}>
+            <ArrowLeft size={14} /> Return to public website
+          </button>
+        </form>
       </div>
     );
   }
 
+  const newCount = enquiries.filter((item) => item.status === 'New').length;
+  const currentNav = NAV.find((item) => item.id === section);
+  const editorTitles = {
+    headline: 'Edit headline',
+    slide: editor?.index < 0 ? 'Add slider image' : 'Edit slider image',
+    video: editor?.index < 0 ? 'Add slider video' : 'Edit slider video',
+    company: 'Edit company',
+    stat: editor?.index < 0 ? 'Add stat' : 'Edit stat',
+    service: editor?.index < 0 ? 'Add service' : 'Edit service',
+    fleet: editor?.index < 0 ? 'Add vehicle' : 'Edit vehicle',
+    blog: editor?.index < 0 ? 'Add article' : 'Edit article',
+    seo: 'Edit SEO',
+    enquiry: 'Enquiry details'
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: '#050A12', color: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* Top Admin Header Bar */}
-      <header style={{
-        background: 'rgba(8, 27, 58, 0.95)',
-        borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
-        padding: '0.85rem 1.75rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        backdropFilter: 'blur(16px)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <button
-            onClick={onBackToWebsite}
-            className="btn-outline"
-            style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem', borderRadius: '8px' }}
-          >
-            <ArrowLeft size={14} /> Back to Website
-          </button>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <img
-              src="/parveen-fleets-logo.png"
-              alt="Parveen Fleets Pvt Ltd"
-              className="brand-logo brand-logo-admin-bar"
-            />
-            <div>
-              <div style={{ fontSize: '0.7rem', color: '#FFD700', fontWeight: 600 }}>Command & Control Hub</div>
-            </div>
-          </div>
+    <div className="admin-shell">
+      <header className="admin-topbar">
+        <button type="button" className="btn-outline" onClick={onBackToWebsite}>
+          <ArrowLeft size={14} /> Website
+        </button>
+        <div className="admin-topbar-copy">
+          <strong>Control Hub</strong>
+          <span>{currentNav?.label || 'Dashboard'}</span>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Active Role Selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.05)', padding: '0.35rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <Shield size={14} color="#FFD700" />
-            <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Role:</span>
-            <select
-              value={currentRole}
-              onChange={(e) => setCurrentRole(e.target.value)}
-              style={{ background: 'transparent', border: 'none', color: '#FFD700', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer' }}
-            >
-              <option value="Admin" style={{ background: '#081B3A' }}>Admin</option>
-              <option value="Manager" style={{ background: '#081B3A' }}>Manager</option>
-              <option value="Operations" style={{ background: '#081B3A' }}>Operations</option>
-              <option value="Sales" style={{ background: '#081B3A' }}>Sales</option>
-              <option value="Support" style={{ background: '#081B3A' }}>Support</option>
-            </select>
-          </div>
-
-          <button
-            onClick={() => setIsAuthenticated(false)}
-            style={{
-              background: 'rgba(239, 68, 68, 0.15)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#F87171',
-              padding: '0.45rem 0.85rem',
-              borderRadius: '8px',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              cursor: 'pointer'
-            }}
-          >
+        <div className="admin-topbar-actions">
+          {notice ? <em className="admin-notice">{notice}</em> : null}
+          <span className={`admin-status-pill ${storage === 'mongodb' ? 'is-live' : ''}`}>
+            {storage === 'mongodb' ? 'MongoDB connected' : 'Temporary storage'}
+          </span>
+          <span className="admin-user-chip"><Shield size={14} /> Admin</span>
+          <button type="button" className="admin-logout" onClick={handleLogout}>
             <LogOut size={14} /> Logout
           </button>
         </div>
       </header>
 
-      {/* Admin Layout with Navigation Sidebar */}
-      <div style={{ display: 'flex', flex: 1 }}>
-        
-        {/* Sidebar */}
-        <aside style={{
-          width: '260px',
-          background: 'rgba(5, 10, 18, 0.98)',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '1.5rem 1rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          flexShrink: 0
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', paddingLeft: '0.75rem', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
-              MAIN NAVIGATION
-            </div>
-
-            <button
-              onClick={() => setActiveSection('dashboard')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'dashboard' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'dashboard' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'dashboard' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <LayoutDashboard size={18} /> Dashboard Stats
-            </button>
-
-            <button
-              onClick={() => setActiveSection('leads')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'leads' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'leads' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'leads' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Users size={18} /> Leads Management
-              </div>
-              <span style={{ background: '#FFD700', color: '#050A12', fontSize: '0.7rem', fontWeight: 800, padding: '0.1rem 0.5rem', borderRadius: '9999px' }}>
-                {leadsList.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveSection('bookings')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'bookings' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'bookings' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'bookings' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <Calendar size={18} /> Booking Orders
-            </button>
-
-            <button
-              onClick={() => setActiveSection('fleet')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'fleet' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'fleet' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'fleet' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <Car size={18} /> Fleet Management
-            </button>
-
-            <button
-              onClick={() => setActiveSection('clients')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'clients' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'clients' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'clients' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <Building2 size={18} /> Corporate Clients
-            </button>
-
-            <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase', paddingLeft: '0.75rem', marginTop: '1.5rem', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>
-              SYSTEM & CMS
-            </div>
-
-            <button
-              onClick={() => setActiveSection('cms')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'cms' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'cms' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'cms' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <FileText size={18} /> CMS & Blogs
-            </button>
-
-            <button
-              onClick={() => setActiveSection('seo')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem 1rem',
-                borderRadius: '10px',
-                background: activeSection === 'seo' ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                border: activeSection === 'seo' ? '1px solid rgba(255, 215, 0, 0.4)' : 'none',
-                color: activeSection === 'seo' ? '#FFD700' : '#CBD5E1',
-                fontWeight: 700,
-                fontSize: '0.9rem',
-                textAlign: 'left'
-              }}
-            >
-              <Globe size={18} /> SEO & Schema Meta
-            </button>
-          </div>
-
-          {/* Quick System Status Card in Sidebar */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '12px',
-            padding: '1rem',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10B981', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-              War Room: All Systems Green
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>
-              112 Hubs Connected • ISO 9001:2015 Live Audit Logged
+      <div className="admin-layout">
+        <aside>
+          <div className="admin-sidebar-brand">
+            <img src="/parveen-fleets-logo.png" alt="Parveen Fleets" />
+            <div>
+              <strong>Parveen Fleets</strong>
+              <span>Website CMS</span>
             </div>
           </div>
+          {Object.entries(navGroups).map(([group, items]) => (
+            <div key={group} className="admin-nav-group">
+              <div className="admin-nav-label">{group}</div>
+              {items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={section === item.id ? 'is-active' : ''}
+                    onClick={() => setSection(item.id)}
+                  >
+                    <Icon size={18} />
+                    {item.label}
+                    {item.id === 'enquiries' ? <b>{enquiries.length}</b> : null}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </aside>
 
-        {/* Main Content Area */}
-        <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-          
-          {/* SECTION: DASHBOARD */}
-          {activeSection === 'dashboard' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    Enterprise Overview & Telematics
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Real-time operational indicators across Pune HQ, Mumbai, Delhi, and Hyderabad.
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button onClick={exportLeadsToExcel} className="btn-outline" style={{ fontSize: '0.85rem', padding: '0.6rem 1rem' }}>
-                    <Download size={15} /> Export Leads Excel
-                  </button>
-                  <button onClick={() => setActiveSection('leads')} className="btn-gold" style={{ fontSize: '0.85rem', padding: '0.6rem 1.25rem' }}>
-                    <Users size={15} /> View New Leads ({leadsList.filter(l => l.status === 'New').length})
-                  </button>
-                </div>
+        <main>
+          {section === 'dashboard' && (
+            <section>
+              <PageHead kicker="Overview" title="Dashboard" text="Live snapshot of enquiries, services, and fleet content." />
+              <div className="admin-stats">
+                <article><span>Total enquiries</span><strong>{enquiries.length}</strong></article>
+                <article><span>New enquiries</span><strong>{newCount}</strong></article>
+                <article><span>Services live</span><strong>{draft.services?.length || 0}</strong></article>
+                <article><span>Fleet vehicles</span><strong>{draft.fleet?.length || 0}</strong></article>
               </div>
-
-              {/* 6 Key Stat Cards */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '1.25rem',
-                marginBottom: '2.5rem'
-              }}>
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    <span>TOTAL VISITORS</span>
-                    <Globe size={16} color="#38BDF8" />
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>84,290</div>
-                  <div style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600 }}>+18.4% this month</div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    <span>TOTAL LEADS</span>
-                    <Users size={16} color="#FFD700" />
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFD700' }}>{1244 + leadsList.length}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#FFD700', fontWeight: 600 }}>{leadsList.length} In Active Pipeline</div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    <span>TOTAL BOOKINGS</span>
-                    <Calendar size={16} color="#10B981" />
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>3,892</div>
-                  <div style={{ fontSize: '0.75rem', color: '#34D399', fontWeight: 600 }}>99.8% On-Time SLA</div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    <span>CONTRACT REVENUE</span>
-                    <DollarSign size={16} color="#34D399" />
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#34D399' }}>₹4.82 Cr</div>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>Active Recurring ARR</div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    <span>ACTIVE VEHICLES</span>
-                    <Car size={16} color="#60A5FA" />
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>384 Cabs</div>
-                  <div style={{ fontSize: '0.75rem', color: '#60A5FA', fontWeight: 600 }}>112+ Hubs Deployed</div>
-                </div>
-
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94A3B8', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-                    <span>NEW MESSAGES / RFPs</span>
-                    <Mail size={16} color="#F59E0B" />
-                  </div>
-                  <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#F59E0B' }}>14</div>
-                  <div style={{ fontSize: '0.75rem', color: '#FBBF24', fontWeight: 600 }}>Action Required</div>
-                </div>
-              </div>
-
-              {/* Recent Activity Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
-                <div className="glass-panel" style={{ padding: '1.75rem', borderRadius: '16px' }}>
-                  <h3 style={{ fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 800, marginBottom: '1rem' }}>
-                    Latest Corporate Inquiries
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    {leadsList.slice(0, 4).map((lead) => (
-                      <div key={lead.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                        <div>
-                          <strong style={{ color: '#FFFFFF', fontSize: '0.9rem' }}>{lead.company}</strong>
-                          <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{lead.name} • {lead.city} • {lead.service}</div>
-                        </div>
-                        <span className={`status-badge ${lead.status.toLowerCase().replace(' ', '_')}`}>
-                          {lead.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="glass-panel" style={{ padding: '1.75rem', borderRadius: '16px' }}>
-                  <h3 style={{ fontSize: '1.15rem', color: '#FFFFFF', fontWeight: 800, marginBottom: '1rem' }}>
-                    Active Dispatch Telematics
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    {bookingsList.map((bk) => (
-                      <div key={bk.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                        <div>
-                          <strong style={{ color: '#FFFFFF', fontSize: '0.9rem' }}>{bk.customer} ({bk.id})</strong>
-                          <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{bk.vehicle} • {bk.drop}</div>
-                        </div>
-                        <span className={`status-badge ${bk.status.toLowerCase().replace(' ', '_')}`}>
-                          {bk.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+              <DataTable columns={['Name', 'Company', 'Service', 'Status', '']}>
+                {(enquiries.slice(0, 6)).map((item) => (
+                  <tr key={item.id}>
+                    <td><strong>{item.name}</strong></td>
+                    <td>{item.company}</td>
+                    <td>{item.service}</td>
+                    <td>{item.status}</td>
+                    <RowActions onEdit={() => openEditor('enquiry', 0, item)} />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
           )}
 
-          {/* SECTION: LEADS MANAGEMENT */}
-          {activeSection === 'leads' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    Leads & Corporate RFPs Management
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Track, manage, and convert incoming corporate transportation inquiries.
-                  </p>
-                </div>
+          {section === 'enquiries' && (
+            <section>
+              <PageHead kicker="Leads" title="Website Enquiries" text="Click Edit to open the full enquiry and update it." />
+              <DataTable columns={['Name', 'Company', 'Service', 'City', 'Status', '']}>
+                {enquiries.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <strong>{item.name}</strong>
+                      <div className="admin-muted">{item.email}</div>
+                    </td>
+                    <td>{item.company}</td>
+                    <td>{item.service}</td>
+                    <td>{item.city}</td>
+                    <td>{item.status}</td>
+                    <RowActions
+                      onEdit={() => openEditor('enquiry', 0, item)}
+                      onDelete={async () => {
+                        if (!window.confirm('Delete this enquiry?')) return;
+                        await api.deleteEnquiry(item.id);
+                        setEnquiries((prev) => prev.filter((row) => row.id !== item.id));
+                      }}
+                    />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
+          )}
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button onClick={exportLeadsToExcel} className="btn-gold" style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem' }}>
-                    <Download size={15} /> Export Excel / CSV
+          {section === 'hero' && (
+            <section>
+              <PageHead kicker="Website content" title="Hero & Media" text="Headline stays the same. Edit slider images or videos from the table." />
+              <DataTable columns={['Item', 'Details', '']}>
+                <tr>
+                  <td><strong>Homepage headline</strong></td>
+                  <td className="admin-muted">{draft.hero?.title} {draft.hero?.highlight}</td>
+                  <RowActions onEdit={() => openEditor('headline', 0, {
+                    title: draft.hero?.title,
+                    highlight: draft.hero?.highlight,
+                    tagline: draft.hero?.tagline
+                  })} />
+                </tr>
+              </DataTable>
+
+              <div className="admin-card">
+                <h3>Slider type</h3>
+                <p className="admin-muted">Pick one. The homepage will show either an image slider or a video slider.</p>
+                <div className="admin-mode-toggle">
+                  <button type="button" className={draft.hero?.sliderMode !== 'video' ? 'is-active' : ''} onClick={() => setSliderMode('image')}>
+                    <ImageIcon size={18} /> Image slider
+                  </button>
+                  <button type="button" className={draft.hero?.sliderMode === 'video' ? 'is-active' : ''} onClick={() => setSliderMode('video')}>
+                    <Video size={18} /> Video slider
                   </button>
                 </div>
               </div>
 
-              {/* Search & Filter Bar */}
-              <div className="glass-card" style={{ padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
-                  <Search size={16} color="#FFD700" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    placeholder="Search by company, contact name, city, service..."
-                    value={leadSearch}
-                    onChange={(e) => setLeadSearch(e.target.value)}
-                    className="pf-input"
-                    style={{ paddingLeft: '2.5rem', fontSize: '0.85rem' }}
+              {draft.hero?.sliderMode === 'video' ? (
+                <>
+                  <PageHead
+                    title="Video slides"
+                    text="Each video opens in a popup to upload or replace."
+                    action={(
+                      <button type="button" className="btn-gold" onClick={() => openEditor('video', -1, { video: '' })}>
+                        <Plus size={16} /> Add video
+                      </button>
+                    )}
                   />
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Filter size={15} color="#94A3B8" />
-                  <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Status:</span>
-                  <select
-                    value={leadStatusFilter}
-                    onChange={(e) => setLeadStatusFilter(e.target.value)}
-                    className="pf-input"
-                    style={{ padding: '0.5rem 0.85rem', fontSize: '0.85rem', width: 'auto' }}
-                  >
-                    <option value="All" style={{ background: '#081B3A' }}>All Statuses</option>
-                    <option value="New" style={{ background: '#081B3A' }}>New</option>
-                    <option value="In Discussion" style={{ background: '#081B3A' }}>In Discussion</option>
-                    <option value="Proposal Sent" style={{ background: '#081B3A' }}>Proposal Sent</option>
-                    <option value="Won" style={{ background: '#081B3A' }}>Won / Closed</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Leads Table */}
-              <div className="glass-panel" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="enterprise-table">
-                    <thead>
-                      <tr>
-                        <th>Lead ID</th>
-                        <th>Client & Company</th>
-                        <th>Contact</th>
-                        <th>Service & City</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                  <DataTable columns={['Video', 'File', '']}>
+                    {(draft.hero?.videos || []).map((item, index) => (
+                      <tr key={`video-${index}`}>
+                        <td><NameCell video={item.video} title={`Video ${index + 1}`} /></td>
+                        <td className="admin-muted">{item.video || 'No file yet'}</td>
+                        <RowActions
+                          onEdit={() => openEditor('video', index, item)}
+                          onDelete={() => deleteItem('video', (prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, videos: prev.hero.videos.filter((_, videoIndex) => videoIndex !== index) }
+                          }))}
+                        />
                       </tr>
-                    </thead>
-                    <tbody>
-                      {filteredLeads.map((lead) => (
-                        <tr key={lead.id}>
-                          <td style={{ fontWeight: 800, color: '#FFD700' }}>{lead.id}</td>
-                          <td>
-                            <strong style={{ color: '#FFFFFF', display: 'block' }}>{lead.company}</strong>
-                            <span style={{ color: '#94A3B8', fontSize: '0.8rem' }}>{lead.name}</span>
-                          </td>
-                          <td>
-                            <div style={{ fontSize: '0.85rem', color: '#E2E8F0' }}>{lead.phone}</div>
-                            <div style={{ fontSize: '0.78rem', color: '#64748B' }}>{lead.email}</div>
-                          </td>
-                          <td>
-                            <span style={{ color: '#FFD700', fontWeight: 600, display: 'block', fontSize: '0.85rem' }}>{lead.service}</span>
-                            <span style={{ color: '#94A3B8', fontSize: '0.78rem' }}>{lead.city} • {lead.fleetSize}</span>
-                          </td>
-                          <td style={{ fontSize: '0.85rem', color: '#CBD5E1' }}>{lead.date}</td>
-                          <td>
-                            <select
-                              value={lead.status}
-                              onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: lead.status === 'Won' ? '#10B981' : lead.status === 'New' ? '#60A5FA' : '#FFD700',
-                                padding: '0.3rem 0.6rem',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                              }}
-                            >
-                              <option value="New" style={{ background: '#081B3A' }}>New</option>
-                              <option value="In Discussion" style={{ background: '#081B3A' }}>In Discussion</option>
-                              <option value="Proposal Sent" style={{ background: '#081B3A' }}>Proposal Sent</option>
-                              <option value="Won" style={{ background: '#081B3A' }}>Won</option>
-                              <option value="Cancelled" style={{ background: '#081B3A' }}>Cancelled</option>
-                            </select>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '0.4rem' }}>
-                              <button
-                                onClick={() => setSelectedLead(lead)}
-                                style={{ background: 'rgba(59, 130, 246, 0.15)', border: 'none', color: '#60A5FA', padding: '0.35rem 0.6rem', borderRadius: '6px', cursor: 'pointer' }}
-                                title="View Details"
-                              >
-                                <Eye size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteLead(lead.id)}
-                                style={{ background: 'rgba(239, 68, 68, 0.15)', border: 'none', color: '#F87171', padding: '0.35rem 0.6rem', borderRadius: '6px', cursor: 'pointer' }}
-                                title="Delete Lead"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Lead Details Modal */}
-              {selectedLead && (
-                <div className="modal-overlay" onClick={() => setSelectedLead(null)}>
-                  <div className="glass-panel" style={{ width: 'clamp(320px, 90vw, 550px)', padding: '2rem', borderRadius: '20px' }} onClick={(e) => e.stopPropagation()}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <h3 style={{ fontSize: '1.3rem', color: '#FFFFFF' }}>Lead Details: {selectedLead.id}</h3>
-                      <button onClick={() => setSelectedLead(null)} style={{ background: 'transparent', border: 'none', color: '#FFFFFF', cursor: 'pointer' }}>
-                        <X size={18} />
+                    ))}
+                  </DataTable>
+                </>
+              ) : (
+                <>
+                  <PageHead
+                    title="Image slides"
+                    text="Each photo opens in a popup to upload or replace."
+                    action={(
+                      <button type="button" className="btn-gold" onClick={() => openEditor('slide', -1, { image: '' })}>
+                        <Plus size={16} /> Add image
                       </button>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-                      <div><strong>Company:</strong> {selectedLead.company}</div>
-                      <div><strong>Contact Name:</strong> {selectedLead.name}</div>
-                      <div><strong>Phone:</strong> {selectedLead.phone}</div>
-                      <div><strong>Email:</strong> {selectedLead.email}</div>
-                      <div><strong>Service Requested:</strong> {selectedLead.service}</div>
-                      <div><strong>City:</strong> {selectedLead.city}</div>
-                      <div><strong>Requirement / Notes:</strong></div>
-                      <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '0.85rem', borderRadius: '8px', color: '#CBD5E1', lineHeight: 1.5 }}>
-                        {selectedLead.message || 'No additional message provided.'}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                      <button onClick={() => setSelectedLead(null)} className="btn-gold" style={{ fontSize: '0.85rem', padding: '0.6rem 1.25rem' }}>
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                    )}
+                  />
+                  <DataTable columns={['Slide', 'Image', '']}>
+                    {(draft.hero?.slides || []).map((slide, index) => (
+                      <tr key={`slide-${index}`}>
+                        <td><NameCell image={slide.image} title={`Slide ${index + 1}`} /></td>
+                        <td className="admin-muted">{slide.image || 'No image yet'}</td>
+                        <RowActions
+                          onEdit={() => openEditor('slide', index, slide)}
+                          onDelete={() => deleteItem('slide', (prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, slides: prev.hero.slides.filter((_, slideIndex) => slideIndex !== index) }
+                          }))}
+                        />
+                      </tr>
+                    ))}
+                  </DataTable>
+                </>
               )}
-            </div>
+            </section>
           )}
 
-          {/* SECTION: BOOKING ORDERS */}
-          {activeSection === 'bookings' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    Corporate Booking Orders & Chauffeur Assignments
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Manage dispatch lifecycle: Pending → Assigned → Confirmed → In Progress → Completed.
-                  </p>
-                </div>
-              </div>
-
-              <div className="glass-panel" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="enterprise-table">
-                    <thead>
-                      <tr>
-                        <th>Booking ID</th>
-                        <th>Client / Company</th>
-                        <th>Service & Vehicle</th>
-                        <th>Chauffeur</th>
-                        <th>Pickup & Destination</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredBookings.map((bk) => (
-                        <tr key={bk.id}>
-                          <td style={{ fontWeight: 800, color: '#FFD700' }}>{bk.id}</td>
-                          <td style={{ fontWeight: 700, color: '#FFFFFF' }}>{bk.customer}</td>
-                          <td>
-                            <strong style={{ color: '#FFD700', display: 'block', fontSize: '0.85rem' }}>{bk.service}</strong>
-                            <span style={{ color: '#94A3B8', fontSize: '0.8rem' }}>{bk.vehicle}</span>
-                          </td>
-                          <td style={{ fontSize: '0.85rem', color: '#CBD5E1' }}>{bk.chauffeur}</td>
-                          <td>
-                            <div style={{ fontSize: '0.85rem', color: '#E2E8F0' }}><strong>From:</strong> {bk.pickup}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#94A3B8' }}><strong>To:</strong> {bk.drop}</div>
-                          </td>
-                          <td>
-                            <select
-                              value={bk.status}
-                              onChange={(e) => handleUpdateBookingStatus(bk.id, e.target.value)}
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: bk.status === 'Completed' || bk.status === 'Confirmed' ? '#10B981' : bk.status === 'In Progress' ? '#38BDF8' : '#F59E0B',
-                                padding: '0.3rem 0.6rem',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                cursor: 'pointer'
-                              }}
-                            >
-                              <option value="Pending" style={{ background: '#081B3A' }}>Pending</option>
-                              <option value="Assigned" style={{ background: '#081B3A' }}>Assigned</option>
-                              <option value="Confirmed" style={{ background: '#081B3A' }}>Confirmed</option>
-                              <option value="In Progress" style={{ background: '#081B3A' }}>In Progress</option>
-                              <option value="Completed" style={{ background: '#081B3A' }}>Completed</option>
-                              <option value="Cancelled" style={{ background: '#081B3A' }}>Cancelled</option>
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
+          {section === 'company' && (
+            <section>
+              <PageHead kicker="Website content" title="Company" text="Click Edit to change contact details used across the site." />
+              <DataTable columns={['Phone', 'Email', 'Head office', '']}>
+                <tr>
+                  <td><strong>{draft.company?.phones?.[0]}</strong></td>
+                  <td>{draft.company?.emails?.[0]}</td>
+                  <td className="admin-muted">{draft.company?.headOffice?.address}</td>
+                  <RowActions onEdit={() => openEditor('company', 0, {
+                    phone: draft.company?.phones?.[0],
+                    email: draft.company?.emails?.[0],
+                    address: draft.company?.headOffice?.address
+                  })} />
+                </tr>
+              </DataTable>
+            </section>
           )}
 
-          {/* SECTION: FLEET MANAGEMENT */}
-          {activeSection === 'fleet' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    Vehicle Fleet Management
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Manage fleet assets, seating capacities, telemetry assignments, and availability.
-                  </p>
-                </div>
+          {section === 'stats' && (
+            <section>
+              <PageHead
+                kicker="Website content"
+                title="Stats"
+                text="Numbers shown under the hero. Click Edit to change a row."
+                action={(
+                  <button type="button" className="btn-gold" onClick={() => openEditor('stat', -1, { value: '', label: '', sub: '' })}>
+                    <Plus size={16} /> Add stat
+                  </button>
+                )}
+              />
+              <DataTable columns={['Value', 'Label', 'Subtext', '']}>
+                {(draft.stats || []).map((stat, index) => (
+                  <tr key={stat.label + index}>
+                    <td><strong>{stat.value}</strong></td>
+                    <td>{stat.label}</td>
+                    <td className="admin-muted">{stat.sub}</td>
+                    <RowActions
+                      onEdit={() => openEditor('stat', index, stat)}
+                      onDelete={() => deleteItem('stat', (prev) => ({
+                        ...prev,
+                        stats: prev.stats.filter((_, itemIndex) => itemIndex !== index)
+                      }))}
+                    />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
+          )}
 
-                <button
-                  onClick={() => setShowAddVehicleModal(true)}
-                  className="btn-gold"
-                  style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem' }}
-                >
-                  <Plus size={15} /> Add New Vehicle
+          {section === 'services' && (
+            <section>
+              <PageHead
+                kicker="Website content"
+                title="Services"
+                text="Click Edit to open the full service details in a popup."
+                action={(
+                  <button type="button" className="btn-gold" onClick={() => openEditor('service', -1, {
+                    id: `service-${Date.now()}`, title: '', tagline: '', description: '', image: '', icon: 'Car', popular: false, featuresText: ''
+                  })}>
+                    <Plus size={16} /> Add service
+                  </button>
+                )}
+              />
+              <DataTable columns={['Service', 'Tagline', '']}>
+                {(draft.services || []).map((service, index) => (
+                  <tr key={service.id || index}>
+                    <td><NameCell image={service.image} title={service.title || 'Untitled service'} /></td>
+                    <td className="admin-muted">{service.tagline}</td>
+                    <RowActions
+                      onEdit={() => openEditor('service', index, { ...service, featuresText: (service.features || []).join('\n') })}
+                      onDelete={() => deleteItem('service', (prev) => ({
+                        ...prev,
+                        services: prev.services.filter((_, itemIndex) => itemIndex !== index)
+                      }))}
+                    />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
+          )}
+
+          {section === 'fleet' && (
+            <section>
+              <PageHead
+                kicker="Website content"
+                title="Fleet"
+                text="Click Edit to change vehicle details and photo."
+                action={(
+                  <button type="button" className="btn-gold" onClick={() => openEditor('fleet', -1, {
+                    id: `fleet-${Date.now()}`, name: '', category: 'Executive Sedans', capacity: '4 Passengers', fuel: 'Petrol', rateEstimate: '', image: '', badge: 'Available', luggage: '2 Bags', featuresText: ''
+                  })}>
+                    <Plus size={16} /> Add vehicle
+                  </button>
+                )}
+              />
+              <DataTable columns={['Vehicle', 'Category', 'Rate', '']}>
+                {(draft.fleet || []).map((vehicle, index) => (
+                  <tr key={vehicle.id || index}>
+                    <td><NameCell image={vehicle.image} title={vehicle.name} /></td>
+                    <td>{vehicle.category}</td>
+                    <td>{vehicle.rateEstimate}</td>
+                    <RowActions
+                      onEdit={() => openEditor('fleet', index, { ...vehicle, featuresText: (vehicle.features || []).join('\n') })}
+                      onDelete={() => deleteItem('vehicle', (prev) => ({
+                        ...prev,
+                        fleet: prev.fleet.filter((_, itemIndex) => itemIndex !== index)
+                      }))}
+                    />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
+          )}
+
+          {section === 'blogs' && (
+            <section>
+              <PageHead
+                kicker="Website content"
+                title="Blogs"
+                text="Click Edit to change an article. Saved copy appears on the website."
+                action={(
+                  <button type="button" className="btn-gold" onClick={() => openEditor('blog', -1, {
+                    id: `blog-${Date.now()}`, title: '', category: 'Corporate Transport', readTime: '4 min read', date: new Date().toLocaleDateString('en-IN', { month: 'long', day: 'numeric', year: 'numeric' }), summary: '', author: 'Parveen Fleets', content: ''
+                  })}>
+                    <Plus size={16} /> Add article
+                  </button>
+                )}
+              />
+              <DataTable columns={['Title', 'Category', 'Date', '']}>
+                {(draft.blogs || []).map((blog, index) => (
+                  <tr key={blog.id || index}>
+                    <td><strong>{blog.title}</strong></td>
+                    <td>{blog.category}</td>
+                    <td className="admin-muted">{blog.date}</td>
+                    <RowActions
+                      onEdit={() => openEditor('blog', index, blog)}
+                      onDelete={() => deleteItem('article', (prev) => ({
+                        ...prev,
+                        blogs: prev.blogs.filter((_, itemIndex) => itemIndex !== index)
+                      }))}
+                    />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
+          )}
+
+          {section === 'seo' && (
+            <section>
+              <PageHead kicker="Website content" title="SEO" text="Click Edit to change search title and description." />
+              <DataTable columns={['Meta title', 'Keywords', '']}>
+                <tr>
+                  <td><strong>{draft.seo?.metaTitle}</strong></td>
+                  <td className="admin-muted">{draft.seo?.keywords}</td>
+                  <RowActions onEdit={() => openEditor('seo', 0, draft.seo || {})} />
+                </tr>
+              </DataTable>
+            </section>
+          )}
+        </main>
+      </div>
+
+      {editor && typeof document !== 'undefined'
+        ? createPortal(
+          <div className="modal-overlay admin-popup-overlay" onClick={() => !saving && closeEditor()}>
+            <div className="admin-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+              <div className="admin-content-head">
+                <div>
+                  <h2>{editorTitles[editor.type] || 'Edit details'}</h2>
+                  <p>Review the details, make changes, then save.</p>
+                </div>
+                <button type="button" className="admin-icon-btn" onClick={closeEditor} disabled={saving}>
+                  <X size={18} />
                 </button>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                {vehiclesList.map((veh) => (
-                  <div key={veh.id} className="glass-card" style={{ padding: '1.5rem', borderRadius: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                      <div>
-                        <span style={{ fontSize: '0.75rem', color: '#94A3B8', textTransform: 'uppercase' }}>{veh.category}</span>
-                        <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 800 }}>{veh.name}</h3>
-                      </div>
-                      <span className="status-badge active">{veh.badge}</span>
-                    </div>
-
-                    <div style={{ fontSize: '0.85rem', color: '#CBD5E1', display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1.25rem' }}>
-                      <div><strong>Capacity:</strong> {veh.capacity}</div>
-                      <div><strong>Fuel:</strong> {veh.fuel}</div>
-                      <div><strong>Tariff Est:</strong> <span style={{ color: '#34D399', fontWeight: 700 }}>{veh.rateEstimate}</span></div>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', paddingTop: '0.75rem' }}>
-                      <button
-                        onClick={() => handleDeleteVehicle(veh.id)}
-                        style={{ background: 'rgba(239, 68, 68, 0.15)', border: 'none', color: '#F87171', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Add Vehicle Modal */}
-              {showAddVehicleModal && (
-                <div className="modal-overlay" onClick={() => setShowAddVehicleModal(false)}>
-                  <div className="glass-panel" style={{ width: 'clamp(320px, 90vw, 500px)', padding: '2rem', borderRadius: '20px' }} onClick={(e) => e.stopPropagation()}>
-                    <h3 style={{ fontSize: '1.4rem', color: '#FFFFFF', marginBottom: '1.25rem' }}>Add New Fleet Asset</h3>
-                    <form onSubmit={handleAddVehicle}>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem' }}>Model Name</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Mercedes Benz E-Class / MG ZS EV"
-                          value={newVehicle.name}
-                          onChange={(e) => setNewVehicle({ ...newVehicle, name: e.target.value })}
-                          className="pf-input"
-                        />
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem' }}>Category</label>
-                        <select
-                          value={newVehicle.category}
-                          onChange={(e) => setNewVehicle({ ...newVehicle, category: e.target.value })}
-                          className="pf-input"
-                        >
-                          <option value="Executive Sedans" style={{ background: '#081B3A' }}>Executive Sedans</option>
-                          <option value="Premium MPVs" style={{ background: '#081B3A' }}>Premium MPVs</option>
-                          <option value="Luxury & VIP" style={{ background: '#081B3A' }}>Luxury & VIP</option>
-                          <option value="Coaches & Travellers" style={{ background: '#081B3A' }}>Coaches & Travellers</option>
-                        </select>
-                      </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem' }}>Seating Capacity</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. 4 Passengers / 26 Seats"
-                          value={newVehicle.capacity}
-                          onChange={(e) => setNewVehicle({ ...newVehicle, capacity: e.target.value })}
-                          className="pf-input"
-                        />
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-                        <button type="button" onClick={() => setShowAddVehicleModal(false)} className="btn-outline">Cancel</button>
-                        <button type="submit" className="btn-gold">Save Vehicle</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
+              {editor.type === 'headline' && (
+                <>
+                  <Field label="Title" value={editor.data.title} onChange={(value) => updateEditor('title', value)} />
+                  <Field label="Gold highlight" value={editor.data.highlight} onChange={(value) => updateEditor('highlight', value)} />
+                  <Field label="Tagline" value={editor.data.tagline} onChange={(value) => updateEditor('tagline', value)} />
+                </>
               )}
-            </div>
-          )}
 
-          {/* SECTION: CLIENT ACCOUNTS */}
-          {activeSection === 'clients' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    Corporate Client Accounts
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Enterprise accounts, monthly contract values, and allocated fleet units.
-                  </p>
-                </div>
-              </div>
+              {editor.type === 'slide' && (
+                <MediaField label="Slider image" kind="image" accept="image/jpeg,image/png,image/webp,image/gif" value={editor.data.image} onUploaded={(url) => updateEditor('image', url)} />
+              )}
 
-              <div className="glass-panel" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                <table className="enterprise-table">
-                  <thead>
-                    <tr>
-                      <th>Client Name</th>
-                      <th>Operational Locations</th>
-                      <th>Active Fleet Size</th>
-                      <th>Contract Billing</th>
-                      <th>Account Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clientsList.map((client) => (
-                      <tr key={client.id}>
-                        <td style={{ fontWeight: 800, color: '#FFFFFF' }}>{client.name}</td>
-                        <td style={{ color: '#CBD5E1' }}>{client.city}</td>
-                        <td style={{ color: '#FFD700', fontWeight: 700 }}>{client.fleetSize}</td>
-                        <td style={{ color: '#10B981', fontWeight: 700 }}>{client.contract}</td>
-                        <td><span className="status-badge active">{client.status}</span></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+              {editor.type === 'video' && (
+                <MediaField label="Slider video" kind="video" accept="video/mp4,video/webm,video/ogg,video/quicktime" value={editor.data.video} onUploaded={(url) => updateEditor('video', url)} />
+              )}
 
-          {/* SECTION: CMS & BLOGS */}
-          {activeSection === 'cms' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    Content Management System (CMS)
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Manage website content: Services, Testimonials, FAQ, Careers, and Knowledge Hub.
-                  </p>
-                </div>
-              </div>
+              {editor.type === 'company' && (
+                <>
+                  <Field label="Primary phone" value={editor.data.phone} onChange={(value) => updateEditor('phone', value)} />
+                  <Field label="Sales email" value={editor.data.email} onChange={(value) => updateEditor('email', value)} />
+                  <Field label="Head office" rows={3} value={editor.data.address} onChange={(value) => updateEditor('address', value)} />
+                </>
+              )}
 
-              <div className="glass-card" style={{ padding: '2rem', borderRadius: '16px' }}>
-                <h3 style={{ fontSize: '1.25rem', color: '#FFFFFF', marginBottom: '1rem' }}>
-                  Manage Published Services ({SERVICES_DATA.length} Active Services)
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
-                  {SERVICES_DATA.map((srv) => (
-                    <div key={srv.id} style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '1rem', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                      <strong style={{ color: '#FFD700', fontSize: '0.95rem', display: 'block' }}>{srv.title}</strong>
-                      <span style={{ fontSize: '0.75rem', color: '#94A3B8' }}>{srv.tagline}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+              {editor.type === 'stat' && (
+                <>
+                  <Field label="Value" value={editor.data.value} onChange={(value) => updateEditor('value', value)} />
+                  <Field label="Label" value={editor.data.label} onChange={(value) => updateEditor('label', value)} />
+                  <Field label="Subtext" value={editor.data.sub} onChange={(value) => updateEditor('sub', value)} />
+                </>
+              )}
 
-          {/* SECTION: SEO CONFIGURATION */}
-          {activeSection === 'seo' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#FFFFFF' }}>
-                    SEO & Schema Markup Engine
-                  </h2>
-                  <p style={{ color: '#94A3B8', fontSize: '0.9rem' }}>
-                    Google Search Console, Open Graph, Twitter Cards, and Rich Snippet Schema settings.
-                  </p>
-                </div>
-
-                {seoSaved && (
-                  <span style={{ color: '#10B981', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
-                    <CheckCircle2 size={16} /> SEO Settings Saved!
-                  </span>
-                )}
-              </div>
-
-              <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px', maxWidth: '750px' }}>
-                <form onSubmit={(e) => { e.preventDefault(); setSeoSaved(true); setTimeout(() => setSeoSaved(false), 2500); }}>
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                      Page Title Tag
-                    </label>
-                    <input
-                      type="text"
-                      value={seoConfig.metaTitle}
-                      onChange={(e) => setSeoConfig({ ...seoConfig, metaTitle: e.target.value })}
-                      className="pf-input"
-                    />
+              {editor.type === 'service' && (
+                <>
+                  <MediaField label="Service image" kind="image" accept="image/jpeg,image/png,image/webp,image/gif" value={editor.data.image} onUploaded={(url) => updateEditor('image', url)} />
+                  <div className="admin-grid admin-grid-2">
+                    <Field label="Service name" value={editor.data.title} onChange={(value) => updateEditor('title', value)} />
+                    <Field label="Tagline" value={editor.data.tagline} onChange={(value) => updateEditor('tagline', value)} />
                   </div>
+                  <Field label="Description" rows={4} value={editor.data.description} onChange={(value) => updateEditor('description', value)} />
+                  <Field label="Features (one per line)" rows={4} value={editor.data.featuresText} onChange={(value) => updateEditor('featuresText', value)} />
+                  <label className="admin-check">
+                    <input type="checkbox" checked={Boolean(editor.data.popular)} onChange={(event) => updateEditor('popular', event.target.checked)} />
+                    Featured service
+                  </label>
+                </>
+              )}
 
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                      Meta Description
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={seoConfig.metaDesc}
-                      onChange={(e) => setSeoConfig({ ...seoConfig, metaDesc: e.target.value })}
-                      className="pf-input"
-                    />
+              {editor.type === 'fleet' && (
+                <>
+                  <MediaField label="Vehicle photo" kind="image" accept="image/jpeg,image/png,image/webp" value={editor.data.image} onUploaded={(url) => updateEditor('image', url)} />
+                  <div className="admin-grid admin-grid-2">
+                    <Field label="Name" value={editor.data.name} onChange={(value) => updateEditor('name', value)} />
+                    <Field label="Category" value={editor.data.category} onChange={(value) => updateEditor('category', value)} />
+                    <Field label="Rate" value={editor.data.rateEstimate} onChange={(value) => updateEditor('rateEstimate', value)} />
+                    <Field label="Capacity" value={editor.data.capacity} onChange={(value) => updateEditor('capacity', value)} />
                   </div>
+                  <Field label="Features (one per line)" rows={3} value={editor.data.featuresText} onChange={(value) => updateEditor('featuresText', value)} />
+                </>
+              )}
 
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                      Focus SEO Keywords
-                    </label>
-                    <input
-                      type="text"
-                      value={seoConfig.keywords}
-                      onChange={(e) => setSeoConfig({ ...seoConfig, keywords: e.target.value })}
-                      className="pf-input"
-                    />
+              {editor.type === 'blog' && (
+                <>
+                  <Field label="Title" value={editor.data.title} onChange={(value) => updateEditor('title', value)} />
+                  <div className="admin-grid admin-grid-2">
+                    <Field label="Category" value={editor.data.category} onChange={(value) => updateEditor('category', value)} />
+                    <Field label="Date" value={editor.data.date} onChange={(value) => updateEditor('date', value)} />
                   </div>
+                  <Field label="Summary" rows={3} value={editor.data.summary} onChange={(value) => updateEditor('summary', value)} />
+                  <Field label="Article content" rows={6} value={editor.data.content} onChange={(value) => updateEditor('content', value)} />
+                </>
+              )}
 
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={{ fontSize: '0.8rem', color: '#CBD5E1', display: 'block', marginBottom: '0.35rem', fontWeight: 600 }}>
-                      Robots Directive
-                    </label>
-                    <input
-                      type="text"
-                      value={seoConfig.robots}
-                      onChange={(e) => setSeoConfig({ ...seoConfig, robots: e.target.value })}
-                      className="pf-input"
-                    />
+              {editor.type === 'seo' && (
+                <>
+                  <Field label="Meta title" value={editor.data.metaTitle} onChange={(value) => updateEditor('metaTitle', value)} />
+                  <Field label="Meta description" rows={3} value={editor.data.metaDesc} onChange={(value) => updateEditor('metaDesc', value)} />
+                  <Field label="Keywords" value={editor.data.keywords} onChange={(value) => updateEditor('keywords', value)} />
+                </>
+              )}
+
+              {editor.type === 'enquiry' && (
+                <>
+                  <div className="admin-grid admin-grid-2">
+                    <Field label="Name" value={editor.data.name} onChange={(value) => updateEditor('name', value)} />
+                    <Field label="Company" value={editor.data.company} onChange={(value) => updateEditor('company', value)} />
+                    <Field label="Phone" value={editor.data.phone} onChange={(value) => updateEditor('phone', value)} />
+                    <Field label="Email" value={editor.data.email} onChange={(value) => updateEditor('email', value)} />
+                    <Field label="Service" value={editor.data.service} onChange={(value) => updateEditor('service', value)} />
+                    <Field label="City" value={editor.data.city} onChange={(value) => updateEditor('city', value)} />
                   </div>
+                  <label className="admin-field">
+                    <span>Status</span>
+                    <select className="pf-input" value={editor.data.status || 'New'} onChange={(event) => updateEditor('status', event.target.value)}>
+                      <option>New</option>
+                      <option>In Discussion</option>
+                      <option>Quoted</option>
+                      <option>Won</option>
+                      <option>Closed</option>
+                    </select>
+                  </label>
+                  <Field label="Message" rows={4} value={editor.data.message} onChange={(value) => updateEditor('message', value)} />
+                </>
+              )}
 
-                  <button type="submit" className="btn-gold" style={{ padding: '0.85rem 1.75rem' }}>
-                    Update Global SEO Metadata
-                  </button>
-                </form>
+              <div className="admin-modal-actions">
+                <button type="button" className="btn-outline" onClick={closeEditor} disabled={saving}>Cancel</button>
+                <button type="button" className="btn-gold" onClick={saveEditor} disabled={saving}>
+                  <Save size={16} /> {saving ? 'Saving...' : 'Save'}
+                </button>
               </div>
             </div>
-          )}
-
-        </main>
-      </div>
+          </div>,
+          document.body
+        )
+        : null}
     </div>
   );
 }
