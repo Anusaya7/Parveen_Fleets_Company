@@ -185,6 +185,14 @@ function normalizeContent(data = {}) {
       image: service.image || byId[service.id]?.image || ''
     }));
   }
+  const reels = Array.isArray(data.instagramVideos) ? data.instagramVideos : defaults.instagramVideos;
+  next.instagramVideos = reels.filter(Boolean).map((item, index) => ({
+    id: item.id || `ig-${index + 1}`,
+    video: item.video || '',
+    title: item.title || '',
+    caption: item.caption || '',
+    instagramUrl: item.instagramUrl || ''
+  }));
   return next;
 }
 

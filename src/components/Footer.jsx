@@ -91,7 +91,7 @@ export default function Footer({ onOpenAdmin }) {
           <div>
             <div style={{ marginBottom: '1.25rem' }}>
               <img
-                src="/parveen-fleets-logo.png"
+                src="/PARVEEN_FLEETS_NEW_LOGO-removebg-preview.png"
                 alt="Parveen Fleets Pvt Ltd"
                 className="brand-logo brand-logo-footer"
               />
@@ -200,6 +200,8 @@ export default function Footer({ onOpenAdmin }) {
               <li><a href="#services">Airport Transfers</a></li>
               <li><a href="#services">Bus & Coach Rentals</a></li>
               <li><a href="#presence">PAN India 112+ Hubs</a></li>
+              <li><a href="#instagram">Instagram Reels</a></li>
+              <li><a href="/instagram">All Instagram videos</a></li>
               <li><a href="#safety">Women Safety Protocols</a></li>
               <li style={{ paddingTop: '0.5rem' }}>
                 <button

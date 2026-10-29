@@ -20,6 +20,7 @@ const NAV = [
   { id: 'services', label: 'Services', icon: Sparkles, group: 'Website content' },
   { id: 'fleet', label: 'Fleet', icon: Car, group: 'Website content' },
   { id: 'blogs', label: 'Blogs', icon: BookOpen, group: 'Website content' },
+  { id: 'instagram', label: 'Instagram', icon: Video, group: 'Website content' },
   { id: 'seo', label: 'SEO', icon: Search, group: 'Website content' }
 ];
 
@@ -39,7 +40,7 @@ function Field({ label, value, onChange, type = 'text', rows }) {
   );
 }
 
-function MediaField({ label, accept, value, onUploaded, kind = 'image' }) {
+function MediaField({ label, accept, value, onUploaded, kind = 'image', aspect }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -64,9 +65,9 @@ function MediaField({ label, accept, value, onUploaded, kind = 'image' }) {
       {label ? <span>{label}</span> : null}
       {value ? (
         kind === 'video' ? (
-          <video src={value} className="admin-media-preview" muted controls />
+          <video src={value} className={`admin-media-preview ${aspect === '9x16' ? 'is-reel' : ''}`} muted controls />
         ) : (
-          <img src={value} alt="" className="admin-media-preview" />
+          <img src={value} alt="" className={`admin-media-preview ${aspect === '9x16' ? 'is-reel' : ''}`} />
         )
       ) : null}
       <label className="admin-upload-btn">
@@ -162,6 +163,7 @@ export default function AdminPortal({ onBackToWebsite }) {
     if (!Array.isArray(next.hero.videos)) {
       next.hero.videos = next.hero.videoUrl ? [{ video: next.hero.videoUrl }] : [];
     }
+    if (!Array.isArray(next.instagramVideos)) next.instagramVideos = [];
     setDraft(next);
   }, [content]);
 
@@ -333,6 +335,18 @@ export default function AdminPortal({ onBackToWebsite }) {
       if (index < 0) blogs.push(saved);
       else blogs[index] = { ...blogs[index], ...saved };
       nextDraft = { ...draft, blogs };
+    } else if (type === 'instagram') {
+      const videos = [...(draft.instagramVideos || [])];
+      const saved = {
+        id: data.id || `ig-${Date.now()}`,
+        video: data.video || '',
+        title: data.title || 'Instagram reel',
+        caption: data.caption || '',
+        instagramUrl: data.instagramUrl || ''
+      };
+      if (index < 0) videos.push(saved);
+      else videos[index] = { ...videos[index], ...saved };
+      nextDraft = { ...draft, instagramVideos: videos };
     }
 
     const ok = await persistDraft(nextDraft, 'Saved to the website.');
@@ -361,7 +375,7 @@ export default function AdminPortal({ onBackToWebsite }) {
         <div className="admin-login-orb admin-login-orb-blue" aria-hidden="true" />
         <form className="admin-login-card" onSubmit={handleLogin}>
           <div className="admin-login-brand">
-            <img src="/parveen-fleets-logo.png" alt="Parveen Fleets Pvt Ltd" className="brand-logo brand-logo-admin" />
+            <img src="/PARVEEN_FLEETS_NEW_LOGO-removebg-preview.png" alt="Parveen Fleets Pvt Ltd" className="brand-logo brand-logo-admin" />
             <span>
               <Shield size={12} />
               Enterprise Command Suite
@@ -397,6 +411,7 @@ export default function AdminPortal({ onBackToWebsite }) {
     service: editor?.index < 0 ? 'Add service' : 'Edit service',
     fleet: editor?.index < 0 ? 'Add vehicle' : 'Edit vehicle',
     blog: editor?.index < 0 ? 'Add article' : 'Edit article',
+    instagram: editor?.index < 0 ? 'Add Instagram video' : 'Edit Instagram video',
     seo: 'Edit SEO',
     enquiry: 'Enquiry details'
   };
@@ -426,7 +441,7 @@ export default function AdminPortal({ onBackToWebsite }) {
       <div className="admin-layout">
         <aside>
           <div className="admin-sidebar-brand">
-            <img src="/parveen-fleets-logo.png" alt="Parveen Fleets" />
+            <img src="/PARVEEN_FLEETS_NEW_LOGO-removebg-preview.png" alt="Parveen Fleets" />
             <div>
               <strong>Parveen Fleets</strong>
               <span>Website CMS</span>
@@ -739,6 +754,41 @@ export default function AdminPortal({ onBackToWebsite }) {
             </section>
           )}
 
+          {section === 'instagram' && (
+            <section>
+              <PageHead
+                kicker="Website content"
+                title="Instagram videos"
+                text="Upload 9:16 vertical videos. They appear on the homepage and the Instagram page."
+                action={(
+                  <button type="button" className="btn-gold" onClick={() => openEditor('instagram', -1, {
+                    id: `ig-${Date.now()}`, video: '', title: '', caption: '', instagramUrl: ''
+                  })}>
+                    <Plus size={16} /> Add video
+                  </button>
+                )}
+              />
+              <DataTable columns={['Video', 'Title', 'Caption', '']}>
+                {(draft.instagramVideos || []).map((item, index) => (
+                  <tr key={item.id || index}>
+                    <td>
+                      <NameCell video={item.video} title={item.title || `Reel ${index + 1}`} />
+                    </td>
+                    <td><strong>{item.title || 'Untitled reel'}</strong></td>
+                    <td className="admin-muted">{item.caption || '—'}</td>
+                    <RowActions
+                      onEdit={() => openEditor('instagram', index, item)}
+                      onDelete={() => deleteItem('Instagram video', (prev) => ({
+                        ...prev,
+                        instagramVideos: (prev.instagramVideos || []).filter((_, itemIndex) => itemIndex !== index)
+                      }))}
+                    />
+                  </tr>
+                ))}
+              </DataTable>
+            </section>
+          )}
+
           {section === 'seo' && (
             <section>
               <PageHead kicker="Website content" title="SEO" text="Click Edit to change search title and description." />
@@ -826,6 +876,22 @@ export default function AdminPortal({ onBackToWebsite }) {
                     <Field label="Capacity" value={editor.data.capacity} onChange={(value) => updateEditor('capacity', value)} />
                   </div>
                   <Field label="Features (one per line)" rows={3} value={editor.data.featuresText} onChange={(value) => updateEditor('featuresText', value)} />
+                </>
+              )}
+
+              {editor.type === 'instagram' && (
+                <>
+                  <MediaField
+                    label="9:16 Instagram video"
+                    kind="video"
+                    aspect="9x16"
+                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                    value={editor.data.video}
+                    onUploaded={(url) => updateEditor('video', url)}
+                  />
+                  <Field label="Title" value={editor.data.title} onChange={(value) => updateEditor('title', value)} />
+                  <Field label="Caption" rows={3} value={editor.data.caption} onChange={(value) => updateEditor('caption', value)} />
+                  <Field label="Instagram URL (optional)" value={editor.data.instagramUrl} onChange={(value) => updateEditor('instagramUrl', value)} />
                 </>
               )}
 

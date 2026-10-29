@@ -23,7 +23,8 @@ export function SiteContentProvider({ children }) {
       setContent({
         ...fallbackContent,
         ...next,
-        hero: { ...fallbackContent.hero, ...(next.hero || {}) }
+        hero: { ...fallbackContent.hero, ...(next.hero || {}) },
+        instagramVideos: Array.isArray(next.instagramVideos) ? next.instagramVideos : fallbackContent.instagramVideos
       });
       setStorage(payload.storage || 'server');
     } catch {

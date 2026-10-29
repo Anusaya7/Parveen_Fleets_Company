@@ -58,6 +58,7 @@ export function buildDefaultContent() {
     fleet: FLEET_SHOWCASE,
     blogs: INITIAL_BLOGS,
     testimonials: TESTIMONIALS_DATA,
+    instagramVideos: [],
     seo: {
       metaTitle: "Parveen Fleets Pvt Ltd | India's Most Trusted Corporate Transportation Partner",
       metaDesc: 'Technology-driven employee transportation, cab rentals, bus rentals, airport transfers across India.',

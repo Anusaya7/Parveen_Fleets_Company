@@ -5,7 +5,7 @@ export const metadata = {
   title: "Parveen Fleets Pvt Ltd | India's Most Trusted Corporate Transportation Partner",
   description: 'Technology-driven employee transportation, corporate cab rentals, luxury bus rentals, airport transfers, and fleet solutions across India with 112+ operational hubs.',
   keywords: 'corporate transportation, employee transport services, cab rentals Pune, bus rental India, Parveen Fleets',
-  icons: { icon: '/parveen-fleets-logo.png' }
+  icons: { icon: '/PARVEEN_FLEETS_NEW_LOGO-removebg-preview.png' }
 };
 
 export default function RootLayout({ children }) {

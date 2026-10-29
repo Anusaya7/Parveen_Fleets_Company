@@ -18,6 +18,7 @@ export default function Navbar({ onOpenQuote }) {
     { name: 'About', href: '#about' },
     { name: 'Services', href: '#services' },
     { name: 'Fleet', href: '#fleet' },
+    { name: 'Instagram', href: '#instagram' },
     { name: 'Safety', href: '#safety' },
     { name: 'Presence', href: '#presence' },
     { name: 'Contact', href: '#contact' },
@@ -26,12 +27,18 @@ export default function Navbar({ onOpenQuote }) {
   const handleLinkClick = (e, href) => {
     e.preventDefault();
     setMobileMenuOpen(false);
+    if (href.startsWith('/')) {
+      window.location.assign(href);
+      return;
+    }
     const target = document.querySelector(href);
     if (target) {
       const header = document.querySelector('header');
       const top = target.getBoundingClientRect().top + window.scrollY - (header?.offsetHeight || 80);
       window.scrollTo({ top, behavior: 'smooth' });
+      return;
     }
+    window.location.assign(`/${href}`);
   };
 
   return (
@@ -77,7 +84,7 @@ export default function Navbar({ onOpenQuote }) {
 
           <a href="#home" onClick={(e) => handleLinkClick(e, '#home')} aria-label="Parveen Fleets home" className="brand-link">
             <img
-              src="/parveen-fleets-logo.png"
+              src="/PARVEEN_FLEETS_NEW_LOGO-removebg-preview.png"
               alt="Parveen Fleets Pvt Ltd"
               className="brand-logo"
             />
@@ -195,7 +202,7 @@ export default function Navbar({ onOpenQuote }) {
         }
         @media (max-width: 640px) {
           .navbar-main { gap: 0.5rem; padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
-          .navbar-main .brand-logo { height: 40px; max-width: 168px; }
+          .navbar-main .brand-logo { height: 48px; max-width: 150px; }
           .navbar-actions { gap: 0.4rem !important; }
           .navbar-actions > .btn-gold { padding: 0.5rem 0.7rem !important; white-space: nowrap; }
           .nav-quote-desktop { display: none; }

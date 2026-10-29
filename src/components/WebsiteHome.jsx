@@ -16,6 +16,7 @@ import OurPresenceSection from './OurPresenceSection';
 import AwardsSection from './AwardsSection';
 import TestimonialsSection from './TestimonialsSection';
 import BlogSection from './BlogSection';
+import InstagramReelsSection from './InstagramReelsSection';
 import ContactSection from './ContactSection';
 import Footer from './Footer';
 import FloatingActions from './FloatingActions';
@@ -100,6 +101,7 @@ export default function WebsiteHome() {
         <AwardsSection onOpenQuote={handleOpenQuote} />
         <TestimonialsSection />
         <BlogSection onReadBlog={(blog) => setActiveBlog(blog)} />
+        <InstagramReelsSection />
         <ContactSection onNewLeadAdded={handleNewLeadAdded} />
       </main>
 
