@@ -4,11 +4,14 @@ import { connectStore, getContent, getStorageMode, saveContent } from '../../../
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_STORE = { 'Cache-Control': 'no-store, max-age=0' };
 
 export async function GET() {
   await connectStore();
   const data = await getContent();
-  return NextResponse.json({ data, storage: getStorageMode() });
+  return NextResponse.json({ data, storage: getStorageMode() }, { headers: NO_STORE });
 }
 
 export async function PUT(request) {
@@ -16,5 +19,5 @@ export async function PUT(request) {
   if (!getAuthUser(request)) return unauthorized();
   const body = await request.json().catch(() => ({}));
   const data = await saveContent(body.data || body);
-  return NextResponse.json({ data, storage: getStorageMode() });
+  return NextResponse.json({ data, storage: getStorageMode() }, { headers: NO_STORE });
 }

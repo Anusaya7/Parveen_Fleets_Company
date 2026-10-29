@@ -39,24 +39,28 @@ export function signAdminToken() {
 
 export function getAuthUser(request) {
   const header = request.headers.get('authorization') || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!token) return null;
+
   const parts = token.split('.');
-  if (parts.length !== 3) return null;
-
-  const [encodedHeader, encodedPayload, signature] = parts;
-  const expected = crypto
-    .createHmac('sha256', SECRET)
-    .update(`${encodedHeader}.${encodedPayload}`)
-    .digest('base64url');
-  if (!safeEqual(signature, expected)) return null;
-
-  try {
-    const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString());
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-    return payload;
-  } catch {
-    return null;
+  if (parts.length === 3) {
+    const [encodedHeader, encodedPayload, signature] = parts;
+    const expected = crypto
+      .createHmac('sha256', SECRET)
+      .update(`${encodedHeader}.${encodedPayload}`)
+      .digest('base64url');
+    if (safeEqual(signature, expected)) {
+      try {
+        const payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString());
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+        return payload;
+      } catch {
+        return null;
+      }
+    }
   }
+
+  return null;
 }
 
 export function unauthorized() {

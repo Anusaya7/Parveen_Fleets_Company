@@ -7,9 +7,8 @@ import {
   LayoutDashboard, LogOut, Mail, Pencil, Phone, Plus, Save, Search, Shield,
   Sparkles, Trash2, Upload, Users, Video, X
 } from 'lucide-react';
-import { api, getAdminToken, setAdminToken } from '../api/client';
+import { AUTH_EXPIRED_EVENT, api, getAdminToken, setAdminToken } from '../api/client';
 import { useSiteContent } from '../context/SiteContentContext';
-import { DEFAULT_HERO_SLIDES } from '../lib/defaultContent';
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'Overview' },
@@ -139,6 +138,7 @@ function NameCell({ image, title, video }) {
 export default function AdminPortal({ onBackToWebsite }) {
   const { content, refreshContent, storage } = useSiteContent();
   const [token, setToken] = useState('');
+  const [authChecked, setAuthChecked] = useState(false);
   const [email, setEmail] = useState('admin@parveenfleets.in');
   const [password, setPassword] = useState('');
   const [loginMessage, setLoginMessage] = useState('');
@@ -151,21 +151,61 @@ export default function AdminPortal({ onBackToWebsite }) {
   const [editor, setEditor] = useState(null);
 
   useEffect(() => {
-    setToken(getAdminToken());
+    let cancelled = false;
+    const stored = getAdminToken();
+    if (!stored) {
+      setAuthChecked(true);
+      return undefined;
+    }
+    api.listEnquiries()
+      .then((payload) => {
+        if (cancelled) return;
+        setToken(stored);
+        setEnquiries(payload.data || []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAdminToken('');
+        setToken('');
+        setEnquiries([]);
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onExpired = () => {
+      setToken('');
+      setEnquiries([]);
+    };
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired);
   }, []);
 
   useEffect(() => {
     const next = { ...content };
-    if (!next.hero?.slides?.length) {
-      next.hero = { ...(next.hero || {}), slides: DEFAULT_HERO_SLIDES };
+    if (next.hero?.sliderMode !== 'video') {
+      next.hero = { ...(next.hero || {}), sliderMode: 'image' };
     }
-    if (next.hero.sliderMode !== 'video') next.hero.sliderMode = 'image';
-    if (!Array.isArray(next.hero.videos)) {
-      next.hero.videos = next.hero.videoUrl ? [{ video: next.hero.videoUrl }] : [];
+    if (!Array.isArray(next.hero?.videos)) {
+      next.hero = {
+        ...(next.hero || {}),
+        videos: next.hero?.videoUrl ? [{ video: next.hero.videoUrl }] : []
+      };
     }
     if (!Array.isArray(next.instagramVideos)) next.instagramVideos = [];
     setDraft(next);
   }, [content]);
+
+  const handleLogout = () => {
+    setAdminToken('');
+    setToken('');
+    setEnquiries([]);
+  };
 
   const loadEnquiries = async () => {
     const payload = await api.listEnquiries();
@@ -185,11 +225,30 @@ export default function AdminPortal({ onBackToWebsite }) {
 
   useEffect(() => {
     if (!token) return undefined;
-    loadEnquiries().catch((error) => setNotice(error.message));
-    const timer = window.setInterval(() => {
-      loadEnquiries().catch(() => {});
-    }, 8000);
-    return () => window.clearInterval(timer);
+    let cancelled = false;
+
+    const tick = async () => {
+      if (cancelled || document.hidden) return;
+      try {
+        const payload = await api.listEnquiries();
+        if (!cancelled) setEnquiries(payload.data || []);
+      } catch (error) {
+        if (cancelled) return;
+        if (error.status === 401) {
+          setAdminToken('');
+          setToken('');
+          setEnquiries([]);
+          return;
+        }
+        setNotice(error.message);
+      }
+    };
+
+    const timer = window.setInterval(tick, 15000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [token]);
 
   const handleLogin = async (event) => {
@@ -208,23 +267,18 @@ export default function AdminPortal({ onBackToWebsite }) {
     }
   };
 
-  const handleLogout = () => {
-    setAdminToken('');
-    setToken('');
-    setEnquiries([]);
-  };
-
   const showNotice = (text) => {
     setNotice(text);
     window.setTimeout(() => setNotice(''), 2500);
   };
 
-  const persistDraft = async (nextDraft, message = 'Saved to the website.') => {
+    const persistDraft = async (nextDraft, message = 'Saved to the website.') => {
     setSaving(true);
     try {
-      await api.saveContent(nextDraft);
-      setDraft(nextDraft);
-      await refreshContent();
+      const saved = await api.saveContent(nextDraft);
+      const data = saved.data || nextDraft;
+      setDraft(data);
+      await refreshContent(data);
       showNotice(message);
       return true;
     } catch (error) {
@@ -367,6 +421,10 @@ export default function AdminPortal({ onBackToWebsite }) {
     groups[item.group].push(item);
     return groups;
   }, {});
+
+  if (!authChecked) {
+    return <div className="admin-login" />;
+  }
 
   if (!token) {
     return (
@@ -511,8 +569,13 @@ export default function AdminPortal({ onBackToWebsite }) {
                       onEdit={() => openEditor('enquiry', 0, item)}
                       onDelete={async () => {
                         if (!window.confirm('Delete this enquiry?')) return;
-                        await api.deleteEnquiry(item.id);
-                        setEnquiries((prev) => prev.filter((row) => row.id !== item.id));
+                        try {
+                          await api.deleteEnquiry(item.id);
+                          setEnquiries((prev) => prev.filter((row) => row.id !== item.id));
+                          showNotice('Enquiry deleted.');
+                        } catch (error) {
+                          showNotice(error.message);
+                        }
                       }}
                     />
                   </tr>

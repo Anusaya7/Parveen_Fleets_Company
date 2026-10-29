@@ -1,10 +1,28 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
 import { buildDefaultContent } from '../lib/defaultContent';
 
 const fallbackContent = buildDefaultContent();
+
+function mergeContent(next = {}) {
+  return {
+    ...fallbackContent,
+    ...next,
+    hero: {
+      ...fallbackContent.hero,
+      ...(next.hero || {}),
+      slides: Array.isArray(next.hero?.slides) ? next.hero.slides : fallbackContent.hero.slides,
+      videos: Array.isArray(next.hero?.videos) ? next.hero.videos : fallbackContent.hero.videos
+    },
+    services: Array.isArray(next.services) ? next.services : fallbackContent.services,
+    fleet: Array.isArray(next.fleet) ? next.fleet : fallbackContent.fleet,
+    stats: Array.isArray(next.stats) ? next.stats : fallbackContent.stats,
+    blogs: Array.isArray(next.blogs) ? next.blogs : fallbackContent.blogs,
+    instagramVideos: Array.isArray(next.instagramVideos) ? next.instagramVideos : []
+  };
+}
 
 const SiteContentContext = createContext({
   content: fallbackContent,
@@ -16,26 +34,24 @@ export function SiteContentProvider({ children }) {
   const [content, setContent] = useState(fallbackContent);
   const [storage, setStorage] = useState('local');
 
-  const refreshContent = async () => {
+  const refreshContent = useCallback(async (preset) => {
+    if (preset) {
+      setContent(mergeContent(preset));
+      return;
+    }
     try {
       const payload = await api.getContent();
-      const next = payload.data || {};
-      setContent({
-        ...fallbackContent,
-        ...next,
-        hero: { ...fallbackContent.hero, ...(next.hero || {}) },
-        instagramVideos: Array.isArray(next.instagramVideos) ? next.instagramVideos : fallbackContent.instagramVideos
-      });
+      setContent(mergeContent(payload.data || {}));
       setStorage(payload.storage || 'server');
     } catch {
       setContent(fallbackContent);
       setStorage('local');
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshContent();
-  }, []);
+  }, [refreshContent]);
 
   useEffect(() => {
     if (!content?.seo) return undefined;
@@ -45,7 +61,7 @@ export function SiteContentProvider({ children }) {
     return undefined;
   }, [content]);
 
-  const value = useMemo(() => ({ content, storage, refreshContent }), [content, storage]);
+  const value = useMemo(() => ({ content, storage, refreshContent }), [content, storage, refreshContent]);
   return <SiteContentContext.Provider value={value}>{children}</SiteContentContext.Provider>;
 }
 

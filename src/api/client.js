@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'parveen-admin-token';
+export const AUTH_EXPIRED_EVENT = 'parveen-auth-expired';
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '');
 
 export function getAdminToken() {
@@ -34,7 +35,15 @@ async function request(path, options = {}) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || `Request failed (${response.status}). Please try again.`);
+    if (response.status === 401 && options.auth !== false) {
+      setAdminToken('');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+      }
+    }
+    const error = new Error(payload.message || `Request failed (${response.status}). Please try again.`);
+    error.status = response.status;
+    throw error;
   }
   return payload;
 }
@@ -59,6 +68,12 @@ export const api = {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+      if (response.status === 401) {
+        setAdminToken('');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+        }
+      }
       throw new Error(payload.message || 'Upload failed. Please try again.');
     }
     return payload;

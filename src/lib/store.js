@@ -86,14 +86,12 @@ export async function connectStore() {
     memory.usingMongo = true;
 
     if (!memory.seeded) {
-      await SiteContent.findOneAndUpdate(
-        { key: 'website' },
-        { $setOnInsert: { data: buildDefaultContent() } },
-        { upsert: true, new: true }
-      );
-      const enquiryCount = await Enquiry.countDocuments();
-      if (enquiryCount === 0) {
-        await Enquiry.insertMany(buildSeedEnquiries());
+      const existing = await SiteContent.findOne({ key: 'website' });
+      if (!existing) {
+        await SiteContent.create({ key: 'website', data: buildDefaultContent() });
+        if ((await Enquiry.countDocuments()) === 0) {
+          await Enquiry.insertMany(buildSeedEnquiries());
+        }
       }
       memory.seeded = true;
     }
@@ -159,7 +157,13 @@ export async function updateEnquiry(id, updates) {
 export async function deleteEnquiry(id) {
   const memory = getMemory();
   if (memory.usingMongo) {
-    const removed = await Enquiry.findByIdAndDelete(id);
+    let removed = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      removed = await Enquiry.findByIdAndDelete(id);
+    }
+    if (!removed) {
+      removed = await Enquiry.findOneAndDelete({ $or: [{ _id: id }, { id }] });
+    }
     return Boolean(removed);
   }
   const before = memory.enquiries.length;
@@ -171,13 +175,13 @@ function normalizeContent(data = {}) {
   const defaults = buildDefaultContent();
   const next = { ...defaults, ...data };
   next.hero = { ...defaults.hero, ...(data.hero || {}) };
-  if (!next.hero.slides?.length) next.hero.slides = DEFAULT_HERO_SLIDES;
+  if (!Array.isArray(next.hero.slides)) next.hero.slides = DEFAULT_HERO_SLIDES;
   if (next.hero.sliderMode !== 'video') next.hero.sliderMode = 'image';
   if (!Array.isArray(next.hero.videos)) next.hero.videos = [];
   if (next.hero.videoUrl && !next.hero.videos.length) {
     next.hero.videos = [{ video: next.hero.videoUrl }];
   }
-  if (Array.isArray(data.services) && data.services.length) {
+  if (Array.isArray(data.services)) {
     const byId = Object.fromEntries(defaults.services.map((service) => [service.id, service]));
     next.services = data.services.map((service) => ({
       ...(byId[service.id] || {}),
@@ -185,6 +189,9 @@ function normalizeContent(data = {}) {
       image: service.image || byId[service.id]?.image || ''
     }));
   }
+  if (Array.isArray(data.stats)) next.stats = data.stats;
+  if (Array.isArray(data.fleet)) next.fleet = data.fleet;
+  if (Array.isArray(data.blogs)) next.blogs = data.blogs;
   const reels = Array.isArray(data.instagramVideos) ? data.instagramVideos : defaults.instagramVideos;
   next.instagramVideos = reels.filter(Boolean).map((item, index) => ({
     id: item.id || `ig-${index + 1}`,
@@ -211,7 +218,7 @@ export async function saveContent(data) {
   if (memory.usingMongo) {
     const doc = await SiteContent.findOneAndUpdate(
       { key: 'website' },
-      { data: normalized },
+      { $set: { data: normalized } },
       { new: true, upsert: true }
     );
     return normalizeContent(doc.data);
