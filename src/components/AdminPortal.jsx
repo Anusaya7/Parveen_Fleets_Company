@@ -82,6 +82,7 @@ function MediaField({ label, accept, value, onUploaded, kind = 'image', aspect, 
       {error ? <em className="admin-error">{error}</em> : null}
     </div>
   );
+}
 
 function PageHead({ kicker, title, text, action }) {
   return (
