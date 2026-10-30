@@ -6,7 +6,6 @@ const nextConfig = {
     unoptimized: true
   },
   experimental: {
-    proxyClientMaxBodySize: '64mb',
     serverActions: {
       bodySizeLimit: '64mb'
     }

@@ -39,8 +39,9 @@ function Field({ label, value, onChange, type = 'text', rows }) {
   );
 }
 
-function MediaField({ label, accept, value, onUploaded, kind = 'image', aspect }) {
+function MediaField({ label, accept, value, onUploaded, kind = 'image', aspect, hint }) {
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
   const handleFile = async (event) => {
@@ -48,12 +49,15 @@ function MediaField({ label, accept, value, onUploaded, kind = 'image', aspect }
     event.target.value = '';
     if (!file) return;
     setBusy(true);
+    setProgress(0);
     setError('');
     try {
-      const saved = await api.upload(file);
+      const saved = await api.upload(file, setProgress);
+      if (!saved?.url) throw new Error('Upload finished without a media URL.');
       onUploaded(saved.url);
+      setProgress(100);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Upload failed. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -64,20 +68,20 @@ function MediaField({ label, accept, value, onUploaded, kind = 'image', aspect }
       {label ? <span>{label}</span> : null}
       {value ? (
         kind === 'video' ? (
-          <video src={value} className={`admin-media-preview ${aspect === '9x16' ? 'is-reel' : ''}`} muted controls />
+          <video src={value} className={`admin-media-preview ${aspect === '9x16' ? 'is-reel' : ''}`} muted controls playsInline />
         ) : (
           <img src={value} alt="" className={`admin-media-preview ${aspect === '9x16' ? 'is-reel' : ''}`} />
         )
       ) : null}
       <label className="admin-upload-btn">
         <Upload size={14} />
-        {busy ? 'Uploading...' : `Upload ${kind}`}
+        {busy ? (progress ? `Uploading ${progress}%` : 'Uploading...') : `Upload ${kind}`}
         <input type="file" accept={accept} onChange={handleFile} hidden disabled={busy} />
       </label>
+      {hint ? <em className="admin-hint">{hint}</em> : null}
       {error ? <em className="admin-error">{error}</em> : null}
     </div>
   );
-}
 
 function PageHead({ kicker, title, text, action }) {
   return (
@@ -894,7 +898,7 @@ export default function AdminPortal({ onBackToWebsite }) {
               )}
 
               {editor.type === 'video' && (
-                <MediaField label="Slider video" kind="video" accept="video/mp4,video/webm,video/ogg,video/quicktime" value={editor.data.video} onUploaded={(url) => updateEditor('video', url)} />
+                <MediaField label="Slider video" kind="video" accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.mov,.webm,.m4v" value={editor.data.video} onUploaded={(url) => updateEditor('video', url)} hint="MP4/MOV up to 60MB. Larger files upload in parts." />
               )}
 
               {editor.type === 'company' && (
@@ -948,13 +952,19 @@ export default function AdminPortal({ onBackToWebsite }) {
                     label="9:16 Instagram video"
                     kind="video"
                     aspect="9x16"
-                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                    accept="video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.mov,.webm,.m4v"
                     value={editor.data.video}
                     onUploaded={(url) => updateEditor('video', url)}
+                    hint="Use MP4 or MOV up to 60MB. Large videos upload in parts automatically."
+                  />
+                  <Field
+                    label="Or paste a direct video URL"
+                    value={editor.data.video}
+                    onChange={(value) => updateEditor('video', value)}
                   />
                   <Field label="Title" value={editor.data.title} onChange={(value) => updateEditor('title', value)} />
                   <Field label="Caption" rows={3} value={editor.data.caption} onChange={(value) => updateEditor('caption', value)} />
-                  <Field label="Instagram URL (optional)" value={editor.data.instagramUrl} onChange={(value) => updateEditor('instagramUrl', value)} />
+                  <Field label="Instagram post URL (optional)" value={editor.data.instagramUrl} onChange={(value) => updateEditor('instagramUrl', value)} />
                 </>
               )}
 
