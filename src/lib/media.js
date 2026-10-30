@@ -174,8 +174,15 @@ export async function readUploadedFile(id) {
   const files = await bucket.find({ _id }).toArray();
   if (!files[0]) return null;
   return {
-    stream: bucket.openDownloadStream(_id),
+    id: String(_id),
+    length: Number(files[0].length) || 0,
     contentType: files[0].contentType || 'application/octet-stream',
-    filename: files[0].filename
+    filename: files[0].filename,
+    openStream: (start, end) => {
+      const options = {};
+      if (typeof start === 'number') options.start = start;
+      if (typeof end === 'number') options.end = end;
+      return bucket.openDownloadStream(_id, options);
+    }
   };
 }

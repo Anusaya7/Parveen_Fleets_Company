@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Video, Play, Volume2, X, ArrowRight } from 'lucide-react';
 import { useSiteContent } from '../context/SiteContentContext';
 
@@ -43,8 +44,49 @@ export default function InstagramReelsSection({ variant = 'home' }) {
   const { content } = useSiteContent();
   const videos = (content.instagramVideos || []).filter((item) => item.video);
   const [active, setActive] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const isPage = variant === 'page';
   const shown = isPage ? videos : videos.slice(0, 6);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const html = document.documentElement;
+    html.classList.add('ig-reel-open');
+    document.body.classList.add('ig-reel-open');
+    return () => {
+      html.classList.remove('ig-reel-open');
+      document.body.classList.remove('ig-reel-open');
+    };
+  }, [active]);
+
+  const popup = active?.video && mounted
+    ? createPortal(
+      <div className="modal-overlay ig-reel-overlay" onClick={() => setActive(null)}>
+        <div className="ig-reel-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <button type="button" className="ig-reel-close" onClick={() => setActive(null)} aria-label="Close video">
+            <X size={18} />
+          </button>
+          <div className="ig-reel-player">
+            <video key={active.video} src={active.video} controls autoPlay playsInline preload="metadata" />
+          </div>
+          <div className="ig-reel-meta">
+            <strong>{active.title || 'Instagram reel'}</strong>
+            {active.caption ? <p>{active.caption}</p> : null}
+            {active.instagramUrl ? (
+              <a href={active.instagramUrl} target="_blank" rel="noreferrer">
+                <Volume2 size={14} /> Open on Instagram
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>,
+      document.body
+    )
+    : null;
 
   return (
     <section id="instagram" className={`instagram-section section-padding ${isPage ? 'is-page' : ''}`}>
@@ -82,25 +124,7 @@ export default function InstagramReelsSection({ variant = 'home' }) {
         ) : null}
       </div>
 
-      {active?.video ? (
-        <div className="modal-overlay ig-reel-overlay" onClick={() => setActive(null)}>
-          <div className="ig-reel-modal" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className="ig-reel-close" onClick={() => setActive(null)} aria-label="Close video">
-              <X size={18} />
-            </button>
-            <video src={active.video} controls autoPlay playsInline />
-            <div className="ig-reel-meta">
-              <strong>{active.title || 'Instagram reel'}</strong>
-              {active.caption ? <p>{active.caption}</p> : null}
-              {active.instagramUrl ? (
-                <a href={active.instagramUrl} target="_blank" rel="noreferrer">
-                  <Volume2 size={14} /> Open on Instagram
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {popup}
     </section>
   );
 }
